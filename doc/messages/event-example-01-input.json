@@ -1,0 +1,7 @@
+{
+  "agent_rollup": "FASTBPM-27267-OrderProvisioning-ATLAS::zlp34997-orderprovisioning-1-4-atlas-6fb7544d9b-9mh2w",
+  "gauge_name": "java.lang:type=MemoryPool,name=Compressed Class Space:Usage.used",
+  "capture_time": 1588169400000,
+  "value": 1.749964E7,
+  "weight": 60
+}
