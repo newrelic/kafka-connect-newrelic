@@ -64,6 +64,6 @@ $ cp ~/Downloads/*.jar /opt/kafka/plugins
   * Customers should think about white listing the Connect url only to certain IPs. In a K8s environment it can be easily done by restricting connect service to a Clusterip.
   * In environments where this is not possible, they will have to use [config providers](https://docs.confluent.io/current/connect/security.html#externalizing-secrets). Kafka provides 2 config providers [File](https://docs.confluent.io/current/connect/security.html#fileconfigprovider) and [InternalSecret (Topic based) ](https://docs.confluent.io/current/connect/security.html#internalsecretconfigprovider). Customers can also look at the API to build their own Config providers.
 
-- Also remember if Kafka rest interface is publicly available it can result in attacks. Customers should whitelist IPs allowed to hit the rest interface.
+- Also remember if Kafka rest interface is publicly available it can result in attacks. Customers should whitelist IPs allowed to hit the rest interface. Another approach is to run connect in [standalone mode](https://docs.confluent.io/3.2.0/connect/userguide.html#standalone-mode) where the Connect workers are started with hard coded cofiguration in properties files. 
 
 
