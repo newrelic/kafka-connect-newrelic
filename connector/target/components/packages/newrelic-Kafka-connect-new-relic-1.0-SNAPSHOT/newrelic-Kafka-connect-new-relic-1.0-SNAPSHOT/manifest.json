@@ -1,0 +1,35 @@
+{
+  "name" : "Kafka-connect-new-relic",
+  "version" : "1.0-SNAPSHOT",
+  "title" : "Kafka Connect New Relic",
+  "description" : "New Relic connector allows moving data from Kafka to New Relic. It writes data from Kafka topic which is in a particular form like events or metrics and utilizes the NewRelic java SDK to write into New Relic.",
+  "owner" : {
+    "username" : "newrelic",
+    "type" : "organization",
+    "name" : "New Relic, Inc.",
+    "url" : "https://newrelic.com/",
+    "logo" : "assets/newrelic.png"
+  },
+  "support" : {
+    "summary" : "New Relic supports the New Relic sink connector alongside community members as part of its Confluent Platform open source offering.",
+    "url" : "https://github.com/newrelic/kafka-connect-newrelic",
+    "logo" : "assets/newrelic.png",
+    "provider_name" : "New Relic, Inc."
+  },
+  "tags" : [ "analytics", "search", "Insights", "NewRelic", "metrics" ],
+  "features" : {
+    "supported_encodings" : [ "any" ],
+    "single_message_transforms" : true,
+    "confluent_control_center_integration" : true,
+    "kafka_connect_api" : true
+  },
+  "logo" : "assets/newrelic.png",
+  "documentation_url" : "https://github.com/newrelic/kafka-connect-newrelic",
+  "docker_image" : {
+    "namespace" : "confluentinc",
+    "name" : "cp-kafka-connect",
+    "tag" : "1.0-SNAPSHOT"
+  },
+  "component_types" : [ "sink" ],
+  "release_date" : "2020-06-29"
+}
