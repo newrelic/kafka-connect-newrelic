@@ -42,7 +42,9 @@ $ cp ~/Downloads/*.jar /opt/kafka/plugins
 - The Connector POM only has a single sink connector hence the [componentype](https://github.com/newrelic/kafka-connect-newrelic/blob/master/connector/pom.xml#L140) is `sink`. The [Statsd POM](https://github.com/newrelic/kafka-connect-newrelic/blob/master/smts/kafka-connect-new-relic-statsd-smt/pom.xml#L129) has componentype `transform`
 
 
-### Connect/framework details that NewRelic customers should know 
+### Connect/framework details that NewRelic customers should know
+
+#### Error Handling
 - Connect framework support several message formats like bitearray, string, JSON, AVRO, protobuf etc
 - We  decided the connector to support JSON
 - Customers can still decide to use Avro/Protobuff etc
@@ -54,4 +56,14 @@ $ cp ~/Downloads/*.jar /opt/kafka/plugins
 
 - If customer decides to go with a plain JSON topic, we have code level validation which looks for required fields and their formats. But this will not be able to use DLQs. Bad messages will be logged and the Connector will move on to next message. This will make bad message tracking harder but Customers can use Splunk/Kibana alerts to get around this.
 - We are using batching wherever possible, which means all the Kafka messages found in a single poll are batched up in one single call to New Relic. This reduces the number of hits to New Relic but increases the payload size. Customer understands that this can result in message loss if the payload size exceeds [max payload size](https://docs.newrelic.com/docs/data-ingest-apis/get-data-new-relic/metric-api/metric-api-limits-restricted-attributes). To make sure that does not happen pass in these parameters which creating connector in the config json [consumer.max.poll.interval.ms](https://docs.confluent.io/current/installation/configuration/consumer-configs.html#max.poll.interval.ms) and [consumer.max.poll.records](https://docs.confluent.io/current/installation/configuration/consumer-configs.html#max.poll.records). *Note that you have to add prefix `consumer.` to the above consumer properties.*
-- To add plugins to you
+
+#### Security
+- Kafka connect job configurations can be viewed at the rest interface for example http://localhost:8083/connectors/[connector-name]/config
+- This will result in exposing your API-KEY. To avoid this customer has a few options 
+
+  * Customers should think about white listing the Connect url only to certain IPs. In a K8s environment it can be easily done by restricting connect service to a Clusterip.
+  * In environments where this is not possible, they will have to use [config providers](https://docs.confluent.io/current/connect/security.html#externalizing-secrets). Kafka provides 2 config providers [File](https://docs.confluent.io/current/connect/security.html#fileconfigprovider) and [InternalSecret (Topic based) ](https://docs.confluent.io/current/connect/security.html#internalsecretconfigprovider). Customers can also look at the API to build their own Config providers.
+
+- Also remember if Kafka rest interface is publicly available it can result in attacks. Customers should whitelist IPs allowed to hit the rest interface.
+
+
