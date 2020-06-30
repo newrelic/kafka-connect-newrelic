@@ -66,7 +66,7 @@ common message formats such as Prometheus
 - To check the status (RUNNING OR PAUSED OR FAILED) use this URL http://localhost:8083/connectors/events-connector/status
 
 ### Create a Telemetry METRICS Connector job
-- Metrics have the same configuration as [events](### Create a Telemetry Events Connector job)
+- Metrics have the same configuration as events.
 - Use Curl or Postman to post the following json on the Connect rest URL http://localhost:8083/connectors.
   ```
   {
