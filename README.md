@@ -1,6 +1,6 @@
 [![Community Project header](https://github.com/newrelic/open-source-office/raw/master/examples/categories/images/Community_Project.png)](https://github.com/newrelic/open-source-office/blob/master/examples/categories/index.md#community-project)
 
-# [Name of Project] [build badges go here when available]
+# Kafka Connect New Relic Connector [build badges go here when available]
 
 >[Brief description - what value does this software provide? How often should users expect to get releases? How is versioning set up? Where does this project want to go?]
 

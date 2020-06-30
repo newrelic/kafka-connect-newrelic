@@ -1,7 +1,8 @@
 # Introduction
 
-Welcome to your new Kafka Connect SMT!
+Welcome to your new Kafka Connect Agent Rollup SMT!
 
 # How to run
 
-Build the jar using `mvn clean package` and put the fat jar into the kafka connect plugins directory
+- Build the zip using `mvn clean package` and unpack the zip into the kafka connect plugins directory
+- This SMT works with the Events Sink connector
