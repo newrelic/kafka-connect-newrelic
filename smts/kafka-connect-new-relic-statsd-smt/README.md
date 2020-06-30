@@ -19,8 +19,7 @@ Welcome to your new Kafka Connect Agent Rollup SMT!
       "value.converter": "org.apache.kafka.connect.json.JsonConverter",
       "value.converter.schemas.enable": false,
       "topics": "statsd",
-      "account.id": "2738846",
-      "api.key": "NRII-APBK3zA-8qdDeiDI-rdm48M5gOyRrdkb",
+      "api.key": "[API-KEY]",
       "transforms":"statsd",
       "transforms.statsd.type":"com.newrelic.telemetry.StatsdTransformation"
       }
