@@ -28,47 +28,30 @@ $ cp ~/Downloads/*.jar /opt/kafka/plugins
 * Configure your plugins directory in Kafka by updating the `connect-distributed.properties` file
   * Update `plugin.path` to include your plugins directory created above
 * _Stop and restart Kafka / Connect if it is already running_
-* Create a plugin configuration file based on the template below *TODO*: let's add a template of this to the repo under the docs folder or similar for developers to refer to.
-
-```json
-{
-  "name": "smt-connector",
-  "config": {
-    "connector.class": "com.newrelic.telemetry.TelemetrySinkConnector",
-    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-    "value.converter.schemas.enable": false,
-    "topics": "nrevents",
-    "account.id": "<NEW_RELIC_ACCOUNT_ID>",
-    "api.key": "<NEW_RELIC_API_KEY>",
-    "data.type":"event",
-    "transforms":"agentRollup",
-    "transforms.agentRollup.type":"com.newrelic.telemetry.AgentRollupTransformation",
-    "transforms.agentRollup.event.type":"SMT_EVENT"
-  }
-}
-```
-where...
-
-| attribute                           | description                                    |
-|:------------------------------------|:-----------------------------------------------|
-| `name`                              | user definable nname for identifying connector |
-| under `config` section              |                                                |
-| `connector.class`                   |                                                |
-| `value.converter`                   |                                                |
-| `value.converter.schemas.enable`    |                                                |
-| `topics`                            |                                                |
-| `account.id`                        |                                                |
-| `api.key`                           | TODO: put link to NR docs about this here      |
-| `data.type`                         |                                                |
-| `transforms`                        |                                                |
-| `transforms.agentRollup.type`       |                                                |
-| `transforms.agentRollup.event.type` | maps to NR `customEvent` attribute field       |
+* Refer the [Events](https://github.com/newrelic/kafka-connect-newrelic/tree/master/connector#create-a-telemetry-events-connector-job) , [Metric](https://github.com/newrelic/kafka-connect-newrelic/tree/master/connector#create-a-telemetry-metrics-connector-job) , [Agent Rollup transformer](https://github.com/newrelic/kafka-connect-newrelic/tree/master/smts/Kafka-connect-new-relic-agent-rollup-smt) or [Statsd](https://github.com/newrelic/kafka-connect-newrelic/tree/master/smts/kafka-connect-new-relic-statsd-smt) transformer for further details 
 
 
-* start kafka if it is not already running
-* start kafka connect
-```bash
-$ ./bin/connect-distributed.sh config/connect-distributed.properties
-```
-* In a web browser, navigate to [URL](http://localhost:8083/connectors) to view the list of loaded connectors
 
+### Build/Packaging
+- All the artifacts are using maven packaging
+- To package the artifact we are using the standard [kafka-connect-maven-plugin](https://docs.confluent.io/5.5.0/connect/managing/confluent-hub/kafka-connect-maven-plugin/kafka-connect-mojo.html#componentTypes)
+- This package will be generated as a zip which you need to unpack into the Connect plugins folder.
+- The zip will be emailed to confluent-hub@confluent.io, for getting it reviewed and added into [Confluent hub](https://www.confluent.io/hub/)
+- Refer the [Connector POM](https://github.com/newrelic/kafka-connect-newrelic/blob/master/connector/pom.xml#L107) to see the plugin details 
+- The plugin will [generate the zip with a manifest](https://docs.confluent.io/current/connect/managing/confluent-hub/component-archive.html#confluent-hub-component-archive) which will be used by reviewers to add it to Confluent hub, as well as it will be used to generate things like Tags, Logos, description etc.
+- The Connector POM only has a single sink connector hence the [componentype](https://github.com/newrelic/kafka-connect-newrelic/blob/master/connector/pom.xml#L140) is `sink`. The [Statsd POM](https://github.com/newrelic/kafka-connect-newrelic/blob/master/smts/kafka-connect-new-relic-statsd-smt/pom.xml#L129) has componentype `transform`
+
+
+### Connect/framework details that NewRelic customers should know 
+- Connect framework support several message formats like bitearray, string, JSON, AVRO, protobuf etc
+- We  decided the connector to support JSON
+- Customers can still decide to use Avro/Protobuff etc
+    
+    * There are several benefits if the customer decides to do so 
+    
+        - The customer can setup their own error handling strategies as described by this [blog](https://www.confluent.io/blog/kafka-connect-deep-dive-error-handling-dead-letter-queues/)
+        - As mentioned in this blog messages which dont comply with valid message formats can be redirected to DLQs which make bad message tracking easily traceable 
+
+- If customer decides to go with a plain JSON topic, we have code level validation which looks for required fields and their formats. But this will not be able to use DLQs. Bad messages will be logged and the Connector will move on to next message. This will make bad message tracking harder but Customers can use Splunk/Kibana alerts to get around this.
+- We are using batching wherever possible, which means all the Kafka messages found in a single poll are batched up in one single call to New Relic. This reduces the number of hits to New Relic but increases the payload size. Customer understands that this can result in message loss if the payload size exceeds [max payload size](https://docs.newrelic.com/docs/data-ingest-apis/get-data-new-relic/metric-api/metric-api-limits-restricted-attributes). To make sure that does not happen pass in these parameters which creating connector in the config json [consumer.max.poll.interval.ms](https://docs.confluent.io/current/installation/configuration/consumer-configs.html#max.poll.interval.ms) and [consumer.max.poll.records](https://docs.confluent.io/current/installation/configuration/consumer-configs.html#max.poll.records). *Note that you have to add prefix `consumer.` to the above consumer properties.*
+- To add plugins to you

@@ -59,6 +59,8 @@ common message formats such as Prometheus
   |value.converter.schemas.enable| false for no schema check      |
   |topics         | Coma seperated list of topics the connector listens to.|
   |api.key        | NR api key |
+  |max.retries        | (Optional) set max number of retries on the NR server, default is 5 |
+  |retry.interval.ms | (Optional) set interval between retries in milli seconds, default is 1000 |
   
   
 - This will create the connector job. To check the list of running Connector jobs head over to http://localhost:8083/connectors
@@ -84,4 +86,4 @@ common message formats such as Prometheus
 ### Simple Message Transforms 
 - Sometimes customers want to use their own message format which is different from the standard `events` or `metrics` format.
 - In that case we develop [Simple Message Transforms](https://docs.confluent.io/current/connect/transforms/index.html#:~:text=Kafka%20Connect%20Transformations-,Kafka%20Connect%20Transformations,sent%20to%20a%20sink%20connector.)  
-- Currently we have developed two SMTs Agent Rollup and Statsd 
+- Currently we have developed two SMTs [Agent Rollup](https://github.com/newrelic/kafka-connect-newrelic/tree/master/smts/Kafka-connect-new-relic-agent-rollup-smt) and [Statsd](https://github.com/newrelic/kafka-connect-newrelic/tree/master/smts/kafka-connect-new-relic-statsd-smt) 
