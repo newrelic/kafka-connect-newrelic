@@ -88,10 +88,9 @@ public class TelemetryEventsSinkTask extends SinkTask {
         for(SinkRecord record:records)   {
             try {
                 log.info("got back record " + record.toString());
-                List<Map<String, Object>> dataValues = (ArrayList<Map<String, Object>>) record.value();
-                  dataValues.forEach(dataValue -> {
-                                log.info("this is the event type" + dataValue.get("eventType"));
-                                EventModel eventModel = mapper.convertValue(dataValue, EventModel.class);
+                List<EventModel> dataValues = (List<EventModel>) record.value();
+                  dataValues.forEach(eventModel -> {
+                                //EventModel eventModel = mapper.convertValue(dataValue, EventModel.class);
                                 Event event = new Event(eventModel.eventType, buildAttributes(eventModel.otherFields()), eventModel.timestamp);
                                 eventBuffer.addEvent(event);
                             });

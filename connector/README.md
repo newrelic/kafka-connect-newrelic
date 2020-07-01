@@ -42,8 +42,7 @@ common message formats such as Prometheus
    "name": "events-connector",
    "config": {
    "connector.class": "com.newrelic.telemetry.events.TelemetryEventsSinkConnector",
-   "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-   "value.converter.schemas.enable": false,
+   "value.converter": "com.newrelic.telemetry.events.EventsConvertor",
    "topics": "nrevents",
    "api.key": "<NEW_RELIC_API_KEY>"
    }
