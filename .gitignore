@@ -13,3 +13,16 @@
 .DS_Store
 /*.iml
 /connector/target
+
+.settings/
+
+# Intellij
+.idea/
+*.iml
+*.iws
+
+# Maven
+log/
+target/
+*/target/**
+/smts/kafka-connect-new-relic-statsd-smt/.idea/
