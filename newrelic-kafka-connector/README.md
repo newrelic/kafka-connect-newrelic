@@ -74,7 +74,7 @@ common message formats such as Prometheus
    "name": "metrics-connector",
    "config": {
    "connector.class": "com.newrelic.telemetry.events.TelemetryMetricsSinkConnector",
-   "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+   "value.converter":"com.newrelic.telemetry.metrics.MetricsConverter",
    "value.converter.schemas.enable": false,
    "topics": "nrmetrics",
    "api.key": "<NEW_RELIC_API_KEY>"
