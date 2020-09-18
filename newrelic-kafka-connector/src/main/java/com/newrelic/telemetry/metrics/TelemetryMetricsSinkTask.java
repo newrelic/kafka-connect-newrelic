@@ -6,6 +6,7 @@ import com.newrelic.telemetry.exceptions.ResponseException;
 import com.newrelic.telemetry.http.HttpPoster;
 import com.newrelic.telemetry.metrics.models.CountModel;
 import com.newrelic.telemetry.metrics.models.GaugeModel;
+import com.newrelic.telemetry.metrics.models.MetricModel;
 import com.newrelic.telemetry.metrics.models.SummaryModel;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -86,12 +87,36 @@ public class TelemetryMetricsSinkTask extends SinkTask {
     @Override
     public void put(Collection<SinkRecord> records) {
 
-        //records.forEach(record -> {
         for (SinkRecord record : records) {
             try {
                 log.info("got back record " + record.toString());
-                List<Map<String, Object>> dataValues = (ArrayList<Map<String, Object>>) record.value();
+                List<MetricModel> dataValues = (ArrayList<MetricModel>) record.value();
+                for (MetricModel metricValue : dataValues) {
+                    if(metricValue instanceof GaugeModel) {
+                        GaugeModel gaugeModel =(GaugeModel) metricValue;
+                        Gauge gauge = new Gauge(gaugeModel.name, gaugeModel.value, gaugeModel.timestamp, buildAttributes(gaugeModel.attributes));
+                        log.info("this is gauge " + gauge.toString());
+                        metricBuffer.addMetric(gauge);
+                    } else if(metricValue instanceof CountModel) {
+                        CountModel countModel =(CountModel) metricValue;
+                        Count count = new Count(countModel.name, countModel.value, countModel.timestamp, countModel.timestamp + countModel.interval, buildAttributes(countModel.attributes));
+                        log.info("this is count " + count.toString());
+                        metricBuffer.addMetric(count);
+                    } else if(metricValue instanceof SummaryModel) {
+                        SummaryModel summaryModel = (SummaryModel) metricValue;
+                        Summary summary =
+                                new Summary(summaryModel.name,
+                                        summaryModel.value.count,
+                                        summaryModel.value.sum,
+                                        summaryModel.value.min,
+                                        summaryModel.value.max,
+                                        summaryModel.timestamp,
+                                        summaryModel.timestamp + summaryModel.interval,
+                                        buildAttributes(summaryModel.attributes));
+                        log.info("this is count " + summary.toString());
+                        metricBuffer.addMetric(summary);
 
+                List<Map<String, Object>> dataValues = (ArrayList<Map<String, Object>>) record.value();
 
                 for (Map<String, Object> metricValue : dataValues) {
                     if (metricValue.get("metrics") == null) {
@@ -146,6 +171,7 @@ public class TelemetryMetricsSinkTask extends SinkTask {
                         }
                     }
                 }
+
             } catch (IllegalArgumentException ie) {
                 log.error(ie.getMessage());
                 //throw ie;
