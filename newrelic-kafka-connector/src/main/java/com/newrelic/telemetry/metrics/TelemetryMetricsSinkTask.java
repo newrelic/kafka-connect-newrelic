@@ -6,6 +6,7 @@ import com.newrelic.telemetry.exceptions.ResponseException;
 import com.newrelic.telemetry.http.HttpPoster;
 import com.newrelic.telemetry.metrics.models.CountModel;
 import com.newrelic.telemetry.metrics.models.GaugeModel;
+import com.newrelic.telemetry.metrics.models.MetricModel;
 import com.newrelic.telemetry.metrics.models.SummaryModel;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -86,66 +87,38 @@ public class TelemetryMetricsSinkTask extends SinkTask {
     @Override
     public void put(Collection<SinkRecord> records) {
 
-        //records.forEach(record -> {
+
         for (SinkRecord record : records) {
             try {
                 log.info("got back record " + record.toString());
-                List<Map<String, Object>> dataValues = (ArrayList<Map<String, Object>>) record.value();
-
-
-                for (Map<String, Object> metricValue : dataValues) {
-                    if (metricValue.get("metrics") == null) {
-                        log.error("Missing metric in message for " + record.kafkaOffset());
-                        continue;
-                    }
-                    List<Map<String, Object>> metrics = (List<Map<String, Object>>) metricValue.get("metrics");
-                    Map<String, Object> commons = (Map<String, Object>) metricValue.get("common");
-                    Map<String, Object> commonAttributes = commons != null ? (Map<String, Object>) commons.get("attributes") : null;
-                    if (commons != null)
-                        commons.remove("attributes");
-                    for (Map<String, Object> dataValue : metrics) {
-                        //dataValue = (Map<String, Object>) metrics.get("metrics");
-                        log.info("this is the attribute" + dataValue.get("attributes"));
-                        log.info("this is the type" + dataValue.get("type"));
-                        if (commons != null)
-                            dataValue.putAll(commons);
-
-                        switch ((String) dataValue.get("type")) {
-                            case "gauge":
-                                GaugeModel gaugeModel = mapper.convertValue(dataValue, GaugeModel.class);
-                                if (commonAttributes != null)
-                                    gaugeModel.attributes.putAll(commonAttributes);
-                                Gauge gauge = new Gauge(gaugeModel.name, gaugeModel.value, gaugeModel.timestamp, buildAttributes(gaugeModel.attributes));
-                                log.info("this is gauge " + gauge.toString());
-                                metricBuffer.addMetric(gauge);
-                                break;
-                            case "count":
-                                CountModel countModel = mapper.convertValue(dataValue, CountModel.class);
-                                if (commonAttributes != null)
-                                    countModel.attributes.putAll(commonAttributes);
-                                Count count = new Count(countModel.name, countModel.value, countModel.timestamp, countModel.timestamp + countModel.interval, buildAttributes(countModel.attributes));
-                                log.info("this is count " + count.toString());
-                                metricBuffer.addMetric(count);
-                                break;
-                            case "summary":
-                                SummaryModel summaryModel = mapper.convertValue(dataValue, SummaryModel.class);
-                                if (commonAttributes != null)
-                                    summaryModel.attributes.putAll(commonAttributes);
-                                Summary summary =
-                                        new Summary(summaryModel.name,
-                                                summaryModel.value.count,
-                                                summaryModel.value.sum,
-                                                summaryModel.value.min,
-                                                summaryModel.value.max,
-                                                summaryModel.timestamp,
-                                                summaryModel.timestamp + summaryModel.interval,
-                                                buildAttributes(summaryModel.attributes));
-                                log.info("this is count " + summary.toString());
-                                metricBuffer.addMetric(summary);
-                                break;
-                        }
+                List<MetricModel> dataValues = (ArrayList<MetricModel>) record.value();
+                for (MetricModel metricValue : dataValues) {
+                    if(metricValue instanceof GaugeModel) {
+                        GaugeModel gaugeModel =(GaugeModel) metricValue;
+                        Gauge gauge = new Gauge(gaugeModel.name, gaugeModel.value, gaugeModel.timestamp, buildAttributes(gaugeModel.attributes));
+                        log.info("this is gauge " + gauge.toString());
+                        metricBuffer.addMetric(gauge);
+                    } else if(metricValue instanceof CountModel) {
+                        CountModel countModel =(CountModel) metricValue;
+                        Count count = new Count(countModel.name, countModel.value, countModel.timestamp, countModel.timestamp + countModel.interval, buildAttributes(countModel.attributes));
+                        log.info("this is count " + count.toString());
+                        metricBuffer.addMetric(count);
+                    } else if(metricValue instanceof SummaryModel) {
+                        SummaryModel summaryModel = (SummaryModel) metricValue;
+                        Summary summary =
+                                new Summary(summaryModel.name,
+                                        summaryModel.value.count,
+                                        summaryModel.value.sum,
+                                        summaryModel.value.min,
+                                        summaryModel.value.max,
+                                        summaryModel.timestamp,
+                                        summaryModel.timestamp + summaryModel.interval,
+                                        buildAttributes(summaryModel.attributes));
+                        log.info("this is count " + summary.toString());
+                        metricBuffer.addMetric(summary);
                     }
                 }
+
             } catch (IllegalArgumentException ie) {
                 log.error(ie.getMessage());
                 //throw ie;

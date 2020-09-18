@@ -1,9 +1,11 @@
 package com.newrelic.telemetry.events;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newrelic.telemetry.events.models.EventModel;
+import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.storage.Converter;
@@ -39,9 +41,10 @@ public class EventsConverter implements Converter {
             List<EventModel> events = new ObjectMapper().readValue(new String(bytes), new TypeReference<List<EventModel>>() {
             });
             return (new SchemaAndValue(null, events));
-        } catch (JsonProcessingException e) {
+        }  catch (Exception e) {
             log.error("Error while deserializing events " + e.getMessage());
+            throw new SerializationException(e.getMessage());
         }
-        return null;
+
     }
 }
