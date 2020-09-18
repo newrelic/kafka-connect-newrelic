@@ -140,7 +140,7 @@ public class TelemetryMetricsSinkTask extends SinkTask {
                                                 summaryModel.timestamp,
                                                 summaryModel.timestamp + summaryModel.interval,
                                                 buildAttributes(summaryModel.attributes));
-                                log.info("this is count " + summary.toString());
+                                log.info("this is summary " + summary.toString());
                                 metricBuffer.addMetric(summary);
                                 break;
                         }
