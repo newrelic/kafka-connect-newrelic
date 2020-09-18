@@ -7,6 +7,7 @@ import com.newrelic.telemetry.http.HttpPoster;
 import com.newrelic.telemetry.events.models.EventModel;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
@@ -105,7 +106,7 @@ public class TelemetryEventsSinkTask extends SinkTask {
                     log.error("Sleep thread was interrupted");
                 }
             } else
-                throw new RuntimeException("failed to connect to new relic after retries");
+                throw new ConnectException("failed to connect to new relic after retries");
         }
 
     }
@@ -127,11 +128,11 @@ public class TelemetryEventsSinkTask extends SinkTask {
 
             if (!(response.getStatusCode() == 200 || response.getStatusCode() == 202)) {
                 log.error("New Relic sent back error " + response.getStatusMessage());
-                throw new RuntimeException(response.getStatusMessage());
+                throw new ConnectException(response.getStatusMessage());
             }
         } catch (ResponseException re) {
             log.error("New Relic down " + re.getMessage());
-            throw new RuntimeException(re);
+            throw new ConnectException(re);
         }
     }
 
