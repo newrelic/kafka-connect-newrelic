@@ -1,13 +1,24 @@
 package com.newrelic.telemetry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.newrelic.telemetry.events.EventBatch;
+import com.newrelic.telemetry.events.EventBatchSender;
+import com.newrelic.telemetry.events.EventsConverter;
 import com.newrelic.telemetry.events.TelemetryEventsSinkTask;
+import com.newrelic.telemetry.exceptions.ResponseException;
+import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Before;
+import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
 
 public class TelemetryEventsSinkTaskTest {
     TelemetryEventsSinkTask sinkTask = new TelemetryEventsSinkTask();
@@ -24,21 +35,20 @@ public class TelemetryEventsSinkTaskTest {
         //sinkTask.mapper = mapper;
         configs = new HashMap<>();
         configs.put(TelemetrySinkConnectorConfig.API_KEY, "");
-        configs.put(TelemetrySinkConnectorConfig.ACCOUNT_ID, "123");
-        configs.put(TelemetrySinkConnectorConfig.MAX_RETRIES, "5");
-        configs.put(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS, "1000");
+
     }
 
 
-  /*@Test
-  public void testPutEvent() throws ResponseException, JsonProcessingException {
+  @Test
+  public void testPutEvent() throws ResponseException{
+
     sinkTask.start(configs);
     sinkTask.eventSender = mock(EventBatchSender.class);
 
     Collection<SinkRecord> records = new ArrayList<SinkRecord>();
-    List<Map<String, Object>>  events = mapper.readValue(eventJSON, List.class);
+    SchemaAndValue  events =  new EventsConverter().toConnectData(eventJSON, eventJSON.getBytes());
 
-    records.add(new SinkRecord("test",0,null, null, null, events, 0 ));
+    records.add(new SinkRecord("test",0,null, null, null, events.value(), 0 ));
 
 
 
@@ -50,55 +60,38 @@ public class TelemetryEventsSinkTaskTest {
 
   }
 
-  //Timestamp missing should not throw exception as the exception handling block should catch it
   @Test
-  public void testPutEventTimestampMissing() throws ResponseException, JsonProcessingException {
+  public void testPutEventWithBadNRURL()  {
+    sinkTask.NRURL="https://insights-collector.newrelic.com12/v1/accounts/events";
     sinkTask.start(configs);
-    sinkTask.eventSender = mock(EventBatchSender.class);
 
     Collection<SinkRecord> records = new ArrayList<SinkRecord>();
-    List<Map<String, Object>>  events = mapper.readValue(eventJSONTSMissing, List.class);
+    SchemaAndValue  events =  new EventsConverter().toConnectData(eventJSON, eventJSON.getBytes());;
 
-    records.add(new SinkRecord("test",0,null, null, null, events, 0 ));
+    records.add(new SinkRecord("test",0,null, null, null, events.value(), 0 ));
 
-    when(sinkTask.eventSender.sendBatch(any(EventBatch.class))).thenReturn(response);
-
-    sinkTask.put(records);
-
-
+    try{
+        sinkTask.put(records);
+    } catch (ConnectException ce) {
+        assertEquals(ce.getMessage(), "failed to connect to new relic after retries 5");
+    }
   }
 
-  //Eventtype missing should not throw exception
-  @Test
-  public void testPutEventEventtypeMissing() throws ResponseException, JsonProcessingException {
-    sinkTask.start(configs);
-    sinkTask.eventSender = mock(EventBatchSender.class);
+    @Test
+    public void testPutEventWithBadNRURLWithDifferentRetries()  {
+        sinkTask.NRURL="https://insights-collector.newrelic.com12/v1/accounts/events";
+        configs.put(TelemetrySinkConnectorConfig.MAX_RETRIES,"3");
+        sinkTask.start(configs);
 
-    Collection<SinkRecord> records = new ArrayList<SinkRecord>();
-    List<Map<String, Object>>  events = mapper.readValue(eventJSONEventTypeMissing, List.class);
+        Collection<SinkRecord> records = new ArrayList<SinkRecord>();
+        SchemaAndValue  events =  new EventsConverter().toConnectData(eventJSON, eventJSON.getBytes());;
 
-    records.add(new SinkRecord("test",0,null, null, null, events, 0 ));
+        records.add(new SinkRecord("test",0,null, null, null, events.value(), 0 ));
 
-    when(sinkTask.eventSender.sendBatch(any(EventBatch.class))).thenReturn(response);
-
-    sinkTask.put(records);
-    //assertNull(sinkTask.eventBatch);
-  }
-
-  @Test(expected = RuntimeException.class)
-  public void testPutEventWithBadNRURL() throws ResponseException, JsonProcessingException {
-
-    sinkTask.start(configs);
-
-    Collection<SinkRecord> records = new ArrayList<SinkRecord>();
-    List<Map<String, Object>>  events = mapper.readValue(eventJSON, List.class);
-
-    records.add(new SinkRecord("test",0,null, null, null, events, 0 ));
-
-    //when(sinkTask.eventSender.sendBatch(any(EventBatch.class))).thenReturn(null);
-
-    sinkTask.put(records);
-    assertEquals(1, sinkTask.eventBatch.size());
-
-  }*/
+        try{
+            sinkTask.put(records);
+        } catch (ConnectException ce) {
+            assertEquals(ce.getMessage(), "failed to connect to new relic after retries 3");
+        }
+    }
 }

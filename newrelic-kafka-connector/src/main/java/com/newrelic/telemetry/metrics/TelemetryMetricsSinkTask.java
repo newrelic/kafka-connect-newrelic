@@ -2,8 +2,10 @@ package com.newrelic.telemetry.metrics;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newrelic.telemetry.*;
-import com.newrelic.telemetry.events.EventBatchSender;
+import com.newrelic.telemetry.exceptions.DiscardBatchException;
 import com.newrelic.telemetry.exceptions.ResponseException;
+import com.newrelic.telemetry.exceptions.RetryWithBackoffException;
+import com.newrelic.telemetry.exceptions.RetryWithSplitException;
 import com.newrelic.telemetry.http.HttpPoster;
 import com.newrelic.telemetry.metrics.models.CountModel;
 import com.newrelic.telemetry.metrics.models.GaugeModel;
@@ -18,7 +20,6 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -28,8 +29,10 @@ import java.util.function.Supplier;
 public class TelemetryMetricsSinkTask extends SinkTask {
     private static Logger log = LoggerFactory.getLogger(TelemetryMetricsSinkTask.class);
     String apiKey = null;
-    String dataType = null;
-    //long accountId=0l;
+    public int retriedCount;
+    int retries;
+    long retryInterval;
+
     public MetricBatchSender sender = null;
 
     MetricBuffer metricBuffer = null;
@@ -49,6 +52,9 @@ public class TelemetryMetricsSinkTask extends SinkTask {
     public void start(Map<String, String> map) {
 
         apiKey = map.get(TelemetrySinkConnectorConfig.API_KEY);
+        retries = map.get(TelemetrySinkConnectorConfig.MAX_RETRIES) != null ? Integer.parseInt(map.get(TelemetrySinkConnectorConfig.MAX_RETRIES)) : (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.MAX_RETRIES);
+        retryInterval = map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS) != null ? Long.parseLong(map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS)) : (Long) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS);
+
         mapper = new ObjectMapper();
         MetricBatchSenderFactory factory =
                 MetricBatchSenderFactory.fromHttpImplementation((Supplier<HttpPoster>) OkHttpPoster::new);
@@ -124,10 +130,31 @@ public class TelemetryMetricsSinkTask extends SinkTask {
 
 
         }
+        if(!metricBuffer.getMetrics().isEmpty()) {
+            retriedCount = 0;
+            metricBatch = metricBuffer.createBatch();
+            while (retriedCount++ < retries - 1) {
+                try {
+                    if(metricBatch==null)
+                        metricBatch = metricBuffer.createBatch();
+                    sendToNewRelic();
+                    break;
+                }  catch(RetriableException re) {
+                    log.info("Retrying for "+retriedCount+" time");
+                    try {
+                        Thread.sleep(retryInterval);
+                    } catch (InterruptedException e) {
+                        log.error("Retry Sleep thread was interrupted");
+                    }
 
-        metricBatch = metricBuffer.createBatch();
+                }
+            }
+            if(retriedCount==retries)
+                throw new ConnectException("failed to connect to new relic after retries "+retriedCount);
 
-        sendToNewRelic();
+
+        }
+
 
     }
 
@@ -143,9 +170,18 @@ public class TelemetryMetricsSinkTask extends SinkTask {
                 log.error("New Relic sent back error " + response.getStatusMessage());
                 throw new RetriableException(response.getStatusMessage());
             }
-        } catch (ResponseException re) {
+        } catch (RetryWithBackoffException re) {
             log.error("New Relic down " + re.getMessage());
             throw new RetriableException(re);
+        } catch (RetryWithSplitException re) {
+            log.error("Message payload too large, try reducing poll interval: "+re.getMessage());
+            throw new ConnectException(re);
+        } catch (DiscardBatchException re) {
+            log.error("API key is probably not right : "+re.getMessage());
+            throw new ConnectException(re);
+        } catch (ResponseException re) {
+            log.error("API key is probably not right : "+re.getMessage());
+            throw new ConnectException(re);
         }
     }
 

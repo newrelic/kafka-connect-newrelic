@@ -2,11 +2,15 @@ package com.newrelic.telemetry.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newrelic.telemetry.*;
+import com.newrelic.telemetry.exceptions.DiscardBatchException;
 import com.newrelic.telemetry.exceptions.ResponseException;
+import com.newrelic.telemetry.exceptions.RetryWithBackoffException;
+import com.newrelic.telemetry.exceptions.RetryWithSplitException;
 import com.newrelic.telemetry.http.HttpPoster;
 import com.newrelic.telemetry.events.models.EventModel;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
@@ -23,8 +27,11 @@ import java.util.function.Supplier;
 public class TelemetryEventsSinkTask extends SinkTask {
     private static Logger log = LoggerFactory.getLogger(TelemetryEventsSinkTask.class);
     String apiKey = null;
+    int retries;
+    long retryInterval;
     public EventBatchSender eventSender = null;
-
+    public String NRURL="https://insights-collector.newrelic.com/v1/accounts/events";
+    public int retriedCount;
     EventBuffer eventBuffer = null;
 
     public EventBatch eventBatch = null;
@@ -42,11 +49,13 @@ public class TelemetryEventsSinkTask extends SinkTask {
     public void start(Map<String, String> map) {
 
         apiKey = map.get(TelemetrySinkConnectorConfig.API_KEY);
+        retries = map.get(TelemetrySinkConnectorConfig.MAX_RETRIES) != null ? Integer.parseInt(map.get(TelemetrySinkConnectorConfig.MAX_RETRIES)) : (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.MAX_RETRIES);
+        retryInterval = map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS) != null ? Long.parseLong(map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS)) : (Long) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS);
         mapper = new ObjectMapper();
 
         try {
             EventBatchSenderFactory eventFactory = EventBatchSenderFactory.fromHttpImplementation((Supplier<HttpPoster>) OkHttpPoster::new);
-            eventSender = EventBatchSender.create(eventFactory.configureWith(apiKey).endpointWithPath(new URL("https://insights-collector.newrelic.com/v1/accounts/events")).build());
+            eventSender = EventBatchSender.create(eventFactory.configureWith(apiKey).endpointWithPath(new URL(NRURL)).build());
             eventBuffer = new EventBuffer(new Attributes());
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -85,24 +94,53 @@ public class TelemetryEventsSinkTask extends SinkTask {
                 continue;
             }
         }
+        if(!eventBuffer.getEvents().isEmpty()) {
+            retriedCount = 0;
 
-        eventBatch = eventBuffer.createBatch();
-        sendToNewRelic();
-    }
+                while (retriedCount++ < retries - 1) {
+                    try {
+                        if(eventBatch==null)
+                            eventBatch = eventBuffer.createBatch();
+                        sendToNewRelic();
+                        break;
+                    }  catch(RetriableException re) {
+                        log.error("Retrying for "+retriedCount+" time");
+                        try {
+                            Thread.sleep(retryInterval);
+                        } catch (InterruptedException e) {
+                            log.error("Retry Sleep thread was interrupted");
+                        }
+
+                    }
+                }
+                if(retriedCount==retries)
+                    throw new ConnectException("failed to connect to new relic after retries "+retriedCount);
+            }
+
+        }
+
 
     private void sendToNewRelic() {
         try {
             Response response = null;
             response = eventSender.sendBatch(eventBatch);
             log.info("Response from new relic " + response);
-
             if (!(response.getStatusCode() == 200 || response.getStatusCode() == 202)) {
                 log.error("New Relic sent back error " + response.getStatusMessage());
                 throw new RetriableException(response.getStatusMessage());
             }
-        } catch (ResponseException re) {
+        } catch (RetryWithBackoffException re) {
             log.error("New Relic down " + re.getMessage());
             throw new RetriableException(re);
+        } catch (RetryWithSplitException re) {
+            log.error("Message payload too large, try reducing poll interval: "+re.getMessage());
+            throw new ConnectException(re);
+        } catch (DiscardBatchException re) {
+            log.error("API key is probably not right : "+re.getMessage());
+            throw new ConnectException(re);
+        } catch (ResponseException re) {
+            log.error("API key is probably not right : "+re.getMessage());
+            throw new ConnectException(re);
         }
     }
 
