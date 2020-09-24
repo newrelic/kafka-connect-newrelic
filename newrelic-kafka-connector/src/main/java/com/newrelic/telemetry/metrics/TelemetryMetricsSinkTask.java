@@ -5,7 +5,6 @@ import com.newrelic.telemetry.*;
 import com.newrelic.telemetry.exceptions.DiscardBatchException;
 import com.newrelic.telemetry.exceptions.ResponseException;
 import com.newrelic.telemetry.exceptions.RetryWithBackoffException;
-import com.newrelic.telemetry.exceptions.RetryWithSplitException;
 import com.newrelic.telemetry.http.HttpPoster;
 import com.newrelic.telemetry.metrics.models.CountModel;
 import com.newrelic.telemetry.metrics.models.GaugeModel;
@@ -173,9 +172,6 @@ public class TelemetryMetricsSinkTask extends SinkTask {
         } catch (RetryWithBackoffException re) {
             log.error("New Relic down " + re.getMessage());
             throw new RetriableException(re);
-        } catch (RetryWithSplitException re) {
-            log.error("Message payload too large, try reducing poll interval: "+re.getMessage());
-            throw new ConnectException(re);
         } catch (DiscardBatchException re) {
             log.error("API key is probably not right : "+re.getMessage());
             throw new ConnectException(re);

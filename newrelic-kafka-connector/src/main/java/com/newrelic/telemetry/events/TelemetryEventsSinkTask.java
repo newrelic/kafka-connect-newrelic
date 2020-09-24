@@ -2,12 +2,11 @@ package com.newrelic.telemetry.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newrelic.telemetry.*;
+import com.newrelic.telemetry.events.models.EventModel;
 import com.newrelic.telemetry.exceptions.DiscardBatchException;
 import com.newrelic.telemetry.exceptions.ResponseException;
 import com.newrelic.telemetry.exceptions.RetryWithBackoffException;
-import com.newrelic.telemetry.exceptions.RetryWithSplitException;
 import com.newrelic.telemetry.http.HttpPoster;
-import com.newrelic.telemetry.events.models.EventModel;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -132,10 +131,7 @@ public class TelemetryEventsSinkTask extends SinkTask {
         } catch (RetryWithBackoffException re) {
             log.error("New Relic down " + re.getMessage());
             throw new RetriableException(re);
-        } catch (RetryWithSplitException re) {
-            log.error("Message payload too large, try reducing poll interval: "+re.getMessage());
-            throw new ConnectException(re);
-        } catch (DiscardBatchException re) {
+        }  catch (DiscardBatchException re) {
             log.error("API key is probably not right : "+re.getMessage());
             throw new ConnectException(re);
         } catch (ResponseException re) {
