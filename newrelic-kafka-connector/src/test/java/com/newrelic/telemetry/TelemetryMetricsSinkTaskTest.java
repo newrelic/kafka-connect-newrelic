@@ -5,23 +5,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newrelic.telemetry.exceptions.ResponseException;
 import com.newrelic.telemetry.metrics.MetricBatch;
 import com.newrelic.telemetry.metrics.MetricBatchSender;
+import com.newrelic.telemetry.metrics.MetricsConverter;
 import com.newrelic.telemetry.metrics.TelemetryMetricsSinkTask;
+import org.apache.kafka.connect.data.SchemaAndValue;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
 
 public class TelemetryMetricsSinkTaskTest {
-    /*TelemetryMetricsSinkTask sinkTask = new TelemetryMetricsSinkTask();
+    TelemetryMetricsSinkTask sinkTask = new TelemetryMetricsSinkTask();
     Map<String, String> configs = null;
     Response response = new Response(200, "Successful", null);
 
@@ -39,9 +36,7 @@ public class TelemetryMetricsSinkTaskTest {
         //sinkTask.mapper = mapper;
         configs = new HashMap<>();
         configs.put(TelemetrySinkConnectorConfig.API_KEY, "");
-        configs.put(TelemetrySinkConnectorConfig.ACCOUNT_ID, "123");
-        configs.put(TelemetrySinkConnectorConfig.MAX_RETRIES, "5");
-        configs.put(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS, "1000");
+
     }
 
     @Test
@@ -50,9 +45,9 @@ public class TelemetryMetricsSinkTaskTest {
         sinkTask.start(configs);
         sinkTask.sender = mock(MetricBatchSender.class);
         Collection<SinkRecord> records = new ArrayList<SinkRecord>();
-        List<Map<String, Object>> metricsList = mapper.readValue(metricCountJSON, List.class);
+        SchemaAndValue metricsList = new MetricsConverter().toConnectData(metricCountJSON, metricCountJSON.getBytes());
 
-        records.add(new SinkRecord("test", 0, null, null, null, metricsList, 0));
+        records.add(new SinkRecord("test", 0, null, null, null, metricsList.value(), 0));
         when(sinkTask.sender.sendBatch(any(MetricBatch.class))).thenReturn(response);
 
         sinkTask.put(records);
@@ -66,9 +61,10 @@ public class TelemetryMetricsSinkTaskTest {
         sinkTask.start(configs);
         sinkTask.sender = mock(MetricBatchSender.class);
         Collection<SinkRecord> records = new ArrayList<SinkRecord>();
-        List<Map<String, Object>> metricsList = mapper.readValue(metricCountGaugeSummaryJSON, List.class);
+        SchemaAndValue metricsList = new MetricsConverter().toConnectData(metricCountGaugeSummaryJSON, metricCountGaugeSummaryJSON.getBytes());
 
-        records.add(new SinkRecord("test", 0, null, null, null, metricsList, 0));
+
+        records.add(new SinkRecord("test", 0, null, null, null, metricsList.value(), 0));
         when(sinkTask.sender.sendBatch(any(MetricBatch.class))).thenReturn(response);
 
         sinkTask.put(records);
@@ -82,13 +78,14 @@ public class TelemetryMetricsSinkTaskTest {
         sinkTask.sender = mock(MetricBatchSender.class);
 
         Collection<SinkRecord> records = new ArrayList<SinkRecord>();
-        List<Map<String, Object>> metricsList = mapper.readValue(metricCountGaugeSummaryJSON, List.class);
+        SchemaAndValue metricsList = new MetricsConverter().toConnectData(metricWithCommonJSON, metricWithCommonJSON.getBytes());
 
-        records.add(new SinkRecord("test", 0, null, null, null, metricsList, 0));
+
+        records.add(new SinkRecord("test", 0, null, null, null, metricsList.value(), 0));
         when(sinkTask.sender.sendBatch(any(MetricBatch.class))).thenReturn(response);
 
         sinkTask.put(records);
         assertEquals(3, sinkTask.metricBatch.size());
 
-    }*/
+    }
 }

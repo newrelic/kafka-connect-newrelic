@@ -2,7 +2,9 @@ package com.newrelic.telemetry.metrics;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newrelic.telemetry.*;
+import com.newrelic.telemetry.exceptions.DiscardBatchException;
 import com.newrelic.telemetry.exceptions.ResponseException;
+import com.newrelic.telemetry.exceptions.RetryWithBackoffException;
 import com.newrelic.telemetry.http.HttpPoster;
 import com.newrelic.telemetry.metrics.models.CountModel;
 import com.newrelic.telemetry.metrics.models.GaugeModel;
@@ -11,6 +13,7 @@ import com.newrelic.telemetry.metrics.models.SummaryModel;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
@@ -25,8 +28,10 @@ import java.util.function.Supplier;
 public class TelemetryMetricsSinkTask extends SinkTask {
     private static Logger log = LoggerFactory.getLogger(TelemetryMetricsSinkTask.class);
     String apiKey = null;
-    String dataType = null;
-    //long accountId=0l;
+    public int retriedCount;
+    int retries;
+    long retryInterval;
+
     public MetricBatchSender sender = null;
 
     MetricBuffer metricBuffer = null;
@@ -35,9 +40,6 @@ public class TelemetryMetricsSinkTask extends SinkTask {
 
     ObjectMapper mapper = null;
 
-    int retries = 0;
-    long retryInterval = 0L;
-    int retriedCount = 0;
 
     @Override
     public String version() {
@@ -51,10 +53,10 @@ public class TelemetryMetricsSinkTask extends SinkTask {
         apiKey = map.get(TelemetrySinkConnectorConfig.API_KEY);
         retries = map.get(TelemetrySinkConnectorConfig.MAX_RETRIES) != null ? Integer.parseInt(map.get(TelemetrySinkConnectorConfig.MAX_RETRIES)) : (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.MAX_RETRIES);
         retryInterval = map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS) != null ? Long.parseLong(map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS)) : (Long) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS);
+
         mapper = new ObjectMapper();
         MetricBatchSenderFactory factory =
                 MetricBatchSenderFactory.fromHttpImplementation((Supplier<HttpPoster>) OkHttpPoster::new);
-        log.info("this is the api key " + apiKey);
         sender =
                 MetricBatchSender.create(factory.configureWith(apiKey).build());
         metricBuffer = new MetricBuffer(getCommonAttributes());
@@ -70,7 +72,7 @@ public class TelemetryMetricsSinkTask extends SinkTask {
     private Attributes buildAttributes(Map<String, Object> atts) {
         Attributes attributes = new Attributes();
         atts.keySet().forEach(key -> {
-            //if(!(key.equals("timestamp") || key.equals("eventType"))) {
+
             Object attributeValue = atts.get(key);
             if (attributeValue instanceof String)
                 attributes.put(key, (String) attributeValue);
@@ -78,7 +80,6 @@ public class TelemetryMetricsSinkTask extends SinkTask {
                 attributes.put(key, (Number) attributeValue);
             else if (attributeValue instanceof Boolean)
                 attributes.put(key, (Boolean) attributeValue);
-            //}
 
         });
         return attributes;
@@ -90,18 +91,18 @@ public class TelemetryMetricsSinkTask extends SinkTask {
 
         for (SinkRecord record : records) {
             try {
-                log.info("got back record " + record.toString());
+                log.debug("got back record " + record.toString());
                 List<MetricModel> dataValues = (ArrayList<MetricModel>) record.value();
                 for (MetricModel metricValue : dataValues) {
                     if(metricValue instanceof GaugeModel) {
                         GaugeModel gaugeModel =(GaugeModel) metricValue;
                         Gauge gauge = new Gauge(gaugeModel.name, gaugeModel.value, gaugeModel.timestamp, buildAttributes(gaugeModel.attributes));
-                        log.info("this is gauge " + gauge.toString());
+                        log.debug("this is gauge " + gauge.toString());
                         metricBuffer.addMetric(gauge);
                     } else if(metricValue instanceof CountModel) {
                         CountModel countModel =(CountModel) metricValue;
                         Count count = new Count(countModel.name, countModel.value, countModel.timestamp, countModel.timestamp + countModel.interval, buildAttributes(countModel.attributes));
-                        log.info("this is count " + count.toString());
+                        log.debug("this is count " + count.toString());
                         metricBuffer.addMetric(count);
                     } else if(metricValue instanceof SummaryModel) {
                         SummaryModel summaryModel = (SummaryModel) metricValue;
@@ -114,62 +115,9 @@ public class TelemetryMetricsSinkTask extends SinkTask {
                                         summaryModel.timestamp,
                                         summaryModel.timestamp + summaryModel.interval,
                                         buildAttributes(summaryModel.attributes));
-                        log.info("this is count " + summary.toString());
+                        log.debug("this is count " + summary.toString());
                         metricBuffer.addMetric(summary);
 
-                List<Map<String, Object>> dataValues = (ArrayList<Map<String, Object>>) record.value();
-
-                for (Map<String, Object> metricValue : dataValues) {
-                    if (metricValue.get("metrics") == null) {
-                        log.error("Missing metric in message for " + record.kafkaOffset());
-                        continue;
-                    }
-                    List<Map<String, Object>> metrics = (List<Map<String, Object>>) metricValue.get("metrics");
-                    Map<String, Object> commons = (Map<String, Object>) metricValue.get("common");
-                    Map<String, Object> commonAttributes = commons != null ? (Map<String, Object>) commons.get("attributes") : null;
-                    if (commons != null)
-                        commons.remove("attributes");
-                    for (Map<String, Object> dataValue : metrics) {
-                        //dataValue = (Map<String, Object>) metrics.get("metrics");
-                        log.info("this is the attribute" + dataValue.get("attributes"));
-                        log.info("this is the type" + dataValue.get("type"));
-                        if (commons != null)
-                            dataValue.putAll(commons);
-
-                        switch ((String) dataValue.get("type")) {
-                            case "gauge":
-                                GaugeModel gaugeModel = mapper.convertValue(dataValue, GaugeModel.class);
-                                if (commonAttributes != null)
-                                    gaugeModel.attributes.putAll(commonAttributes);
-                                Gauge gauge = new Gauge(gaugeModel.name, gaugeModel.value, gaugeModel.timestamp, buildAttributes(gaugeModel.attributes));
-                                log.info("this is gauge " + gauge.toString());
-                                metricBuffer.addMetric(gauge);
-                                break;
-                            case "count":
-                                CountModel countModel = mapper.convertValue(dataValue, CountModel.class);
-                                if (commonAttributes != null)
-                                    countModel.attributes.putAll(commonAttributes);
-                                Count count = new Count(countModel.name, countModel.value, countModel.timestamp, countModel.timestamp + countModel.interval, buildAttributes(countModel.attributes));
-                                log.info("this is count " + count.toString());
-                                metricBuffer.addMetric(count);
-                                break;
-                            case "summary":
-                                SummaryModel summaryModel = mapper.convertValue(dataValue, SummaryModel.class);
-                                if (commonAttributes != null)
-                                    summaryModel.attributes.putAll(commonAttributes);
-                                Summary summary =
-                                        new Summary(summaryModel.name,
-                                                summaryModel.value.count,
-                                                summaryModel.value.sum,
-                                                summaryModel.value.min,
-                                                summaryModel.value.max,
-                                                summaryModel.timestamp,
-                                                summaryModel.timestamp + summaryModel.interval,
-                                                buildAttributes(summaryModel.attributes));
-                                log.info("this is summary " + summary.toString());
-                                metricBuffer.addMetric(summary);
-                                break;
-                        }
                     }
                 }
 
@@ -181,55 +129,61 @@ public class TelemetryMetricsSinkTask extends SinkTask {
 
 
         }
-
-        metricBatch = metricBuffer.createBatch();
-
-        retriedCount = 0;
-        while (!circuitBreaker()) {
-            if (retriedCount++ < retries - 1) {
+        if(!metricBuffer.getMetrics().isEmpty()) {
+            retriedCount = 0;
+            metricBatch = metricBuffer.createBatch();
+            while (retriedCount++ < retries - 1) {
                 try {
-                    Thread.sleep(retryInterval);
-                } catch (InterruptedException e) {
-                    log.error("Sleep thread was interrupted");
+                    if(metricBatch==null)
+                        metricBatch = metricBuffer.createBatch();
+                    sendToNewRelic();
+                    break;
+                }  catch(RetriableException re) {
+                    log.info("Retrying for "+retriedCount+" time");
+                    try {
+                        Thread.sleep(retryInterval);
+                    } catch (InterruptedException e) {
+                        log.error("Retry Sleep thread was interrupted");
+                    }
+
                 }
-            } else
-                throw new ConnectException("failed to connect to new relic after retries");
+            }
+            if(retriedCount==retries)
+                throw new ConnectException("failed to connect to new relic after retries "+retriedCount);
+
+
         }
+
 
     }
 
-    private boolean circuitBreaker() {
-        try {
-            sendToNewRelic();
-            return true;
-        } catch (ConnectException e) {
-            return false;
-        }
-    }
+
 
     private void sendToNewRelic() {
         try {
             Response response = null;
             response = sender.sendBatch(metricBatch);
-            log.info("Response from new relic " + response);
+            log.debug("Response from new relic " + response);
 
             if (!(response.getStatusCode() == 200 || response.getStatusCode() == 202)) {
                 log.error("New Relic sent back error " + response.getStatusMessage());
-                throw new ConnectException(response.getStatusMessage());
+                throw new RetriableException(response.getStatusMessage());
             }
-        } catch (ResponseException re) {
+        } catch (RetryWithBackoffException re) {
             log.error("New Relic down " + re.getMessage());
+            throw new RetriableException(re);
+        } catch (DiscardBatchException re) {
+            log.error("API key is probably not right : "+re.getMessage());
+            throw new ConnectException(re);
+        } catch (ResponseException re) {
+            log.error("API key is probably not right : "+re.getMessage());
             throw new ConnectException(re);
         }
     }
 
-    private void logMalformedError(Map<String, Object> values) {
-        log.error(dataType + " is malformed " + values.toString());
-    }
-
     @Override
     public void flush(Map<TopicPartition, OffsetAndMetadata> map) {
-
+        super.flush(map);
     }
 
     @Override

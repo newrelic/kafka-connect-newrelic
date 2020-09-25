@@ -2,12 +2,15 @@ package com.newrelic.telemetry.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newrelic.telemetry.*;
-import com.newrelic.telemetry.exceptions.ResponseException;
-import com.newrelic.telemetry.http.HttpPoster;
 import com.newrelic.telemetry.events.models.EventModel;
+import com.newrelic.telemetry.exceptions.DiscardBatchException;
+import com.newrelic.telemetry.exceptions.ResponseException;
+import com.newrelic.telemetry.exceptions.RetryWithBackoffException;
+import com.newrelic.telemetry.http.HttpPoster;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
@@ -23,17 +26,17 @@ import java.util.function.Supplier;
 public class TelemetryEventsSinkTask extends SinkTask {
     private static Logger log = LoggerFactory.getLogger(TelemetryEventsSinkTask.class);
     String apiKey = null;
+    int retries;
+    long retryInterval;
     public EventBatchSender eventSender = null;
-
+    public String NRURL="https://insights-collector.newrelic.com/v1/accounts/events";
+    public int retriedCount;
     EventBuffer eventBuffer = null;
 
     public EventBatch eventBatch = null;
 
     ObjectMapper mapper = null;
 
-    int retries = 0;
-    long retryInterval = 0L;
-    int retriedCount = 0;
 
     @Override
     public String version() {
@@ -45,14 +48,13 @@ public class TelemetryEventsSinkTask extends SinkTask {
     public void start(Map<String, String> map) {
 
         apiKey = map.get(TelemetrySinkConnectorConfig.API_KEY);
-        //accountId = Long.parseLong( map.get(TelemetrySinkConnectorConfig.ACCOUNT_ID));
         retries = map.get(TelemetrySinkConnectorConfig.MAX_RETRIES) != null ? Integer.parseInt(map.get(TelemetrySinkConnectorConfig.MAX_RETRIES)) : (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.MAX_RETRIES);
         retryInterval = map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS) != null ? Long.parseLong(map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS)) : (Long) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS);
         mapper = new ObjectMapper();
 
         try {
             EventBatchSenderFactory eventFactory = EventBatchSenderFactory.fromHttpImplementation((Supplier<HttpPoster>) OkHttpPoster::new);
-            eventSender = EventBatchSender.create(eventFactory.configureWith(apiKey).endpointWithPath(new URL("https://insights-collector.newrelic.com/v1/accounts/events")).build());
+            eventSender = EventBatchSender.create(eventFactory.configureWith(apiKey).endpointWithPath(new URL(NRURL)).build());
             eventBuffer = new EventBuffer(new Attributes());
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -62,7 +64,6 @@ public class TelemetryEventsSinkTask extends SinkTask {
     private Attributes buildAttributes(Map<String, Object> atts) {
         Attributes attributes = new Attributes();
         atts.keySet().forEach(key -> {
-            //if(!(key.equals("timestamp") || key.equals("eventType"))) {
             Object attributeValue = atts.get(key);
             if (attributeValue instanceof String)
                 attributes.put(key, (String) attributeValue);
@@ -70,7 +71,6 @@ public class TelemetryEventsSinkTask extends SinkTask {
                 attributes.put(key, (Number) attributeValue);
             else if (attributeValue instanceof Boolean)
                 attributes.put(key, (Boolean) attributeValue);
-            //}
 
         });
         return attributes;
@@ -81,10 +81,9 @@ public class TelemetryEventsSinkTask extends SinkTask {
     public void put(Collection<SinkRecord> records) {
         for (SinkRecord record : records) {
             try {
-                log.info("got back record " + record.toString());
+                log.debug("got back record " + record.toString());
                 List<EventModel> dataValues = (List<EventModel>) record.value();
                 dataValues.forEach(eventModel -> {
-                    //EventModel eventModel = mapper.convertValue(dataValue, EventModel.class);
                     Event event = new Event(eventModel.eventType, buildAttributes(eventModel.otherFields()), eventModel.timestamp);
                     eventBuffer.addEvent(event);
                 });
@@ -94,44 +93,49 @@ public class TelemetryEventsSinkTask extends SinkTask {
                 continue;
             }
         }
+        if(!eventBuffer.getEvents().isEmpty()) {
+            retriedCount = 0;
 
-        eventBatch = eventBuffer.createBatch();
+                while (retriedCount++ < retries - 1) {
+                    try {
+                        if(eventBatch==null)
+                            eventBatch = eventBuffer.createBatch();
+                        sendToNewRelic();
+                        break;
+                    }  catch(RetriableException re) {
+                        log.error("Retrying for "+retriedCount+" time");
+                        try {
+                            Thread.sleep(retryInterval);
+                        } catch (InterruptedException e) {
+                            log.error("Retry Sleep thread was interrupted");
+                        }
 
-        retriedCount = 0;
-        while (!circuitBreaker()) {
-            if (retriedCount++ < retries - 1) {
-                try {
-                    Thread.sleep(retryInterval);
-                } catch (InterruptedException e) {
-                    log.error("Sleep thread was interrupted");
+                    }
                 }
-            } else
-                throw new ConnectException("failed to connect to new relic after retries");
+                if(retriedCount==retries)
+                    throw new ConnectException("failed to connect to new relic after retries "+retriedCount);
+            }
+
         }
 
-    }
-
-    private boolean circuitBreaker() {
-        try {
-            sendToNewRelic();
-            return true;
-        } catch (RuntimeException e) {
-            return false;
-        }
-    }
 
     private void sendToNewRelic() {
         try {
             Response response = null;
             response = eventSender.sendBatch(eventBatch);
             log.info("Response from new relic " + response);
-
             if (!(response.getStatusCode() == 200 || response.getStatusCode() == 202)) {
                 log.error("New Relic sent back error " + response.getStatusMessage());
-                throw new ConnectException(response.getStatusMessage());
+                throw new RetriableException(response.getStatusMessage());
             }
-        } catch (ResponseException re) {
+        } catch (RetryWithBackoffException re) {
             log.error("New Relic down " + re.getMessage());
+            throw new RetriableException(re);
+        }  catch (DiscardBatchException re) {
+            log.error("API key is probably not right : "+re.getMessage());
+            throw new ConnectException(re);
+        } catch (ResponseException re) {
+            log.error("API key is probably not right : "+re.getMessage());
             throw new ConnectException(re);
         }
     }
@@ -139,7 +143,7 @@ public class TelemetryEventsSinkTask extends SinkTask {
 
     @Override
     public void flush(Map<TopicPartition, OffsetAndMetadata> map) {
-
+        super.flush(map);
     }
 
     @Override

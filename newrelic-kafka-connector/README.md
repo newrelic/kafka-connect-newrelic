@@ -47,19 +47,7 @@ common message formats such as Prometheus
    "api.key": "<NEW_RELIC_API_KEY>"
    }
   }
-    ```
-  where...
-  
-  | attribute     |                          description          |
-  | ------------- | --------------------------------------------- |
-  | name          | user definable name for identifying connector |
-  |connector.class| Fully qualified class name                    |
-  |value.converter| JSON convertor                                |
-  |value.converter.schemas.enable| false for no schema check      |
-  |topics         | Coma seperated list of topics the connector listens to.|
-  |api.key        | NR api key |
-  |max.retries        | (Optional) set max number of retries on the NR server, default is 5 |
-  |retry.interval.ms | (Optional) set interval between retries in milli seconds, default is 1000 |
+  ```
   
   
 - This will create the connector job. To check the list of running Connector jobs head over to http://localhost:8083/connectors
@@ -81,6 +69,21 @@ common message formats such as Prometheus
    }
   }
     ```
+### Full list of variables you can send to connector 
+  | attribute     | Required |                          description          |
+  | ------------- | -------- | --------------------------------------------- |
+  | name          | yes | user definable name for identifying connector |
+  |connector.class| yes | com.newrelic.telemetry.events.TelemetryEventsSinkConnector(Events) or com.newrelic.telemetry.events.TelemetryMetricsSinkConnector(Metrics)|
+  |value.converter| yes | com.newrelic.telemetry.events.EventsConverter(Events) or com.newrelic.telemetry.metrics.MetricsConverter(Metrics) |
+  |topics         | yes | Coma seperated list of topics the connector listens to.|
+  |api.key        | yes | NR api key |
+  |nr.max.retries | no  | set max number of retries on the NR server, default is 5 |
+  |nr.retry.interval.ms | no | set interval between retries in milli seconds, default is 1000 |
+  |errors.tolerance | no | all(ignores all json errors) or none(makes connector fail on messages with incorrect format) |
+  |errors.deadletterqueue.topic.name| no | dlq topic name ( messages with incorrect format are sent to this topic) |
+  |errors.deadletterqueue.topic.replication.factor| no | dlq topic replication factor |
+  
+  
 
 ### Simple Message Transforms 
 - Sometimes customers want to use their own message format which is different from the standard `events` or `metrics` format.

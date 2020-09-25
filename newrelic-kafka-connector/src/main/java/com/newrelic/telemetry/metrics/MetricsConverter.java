@@ -1,8 +1,6 @@
 package com.newrelic.telemetry.metrics;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newrelic.telemetry.events.models.EventModel;
 import com.newrelic.telemetry.metrics.models.CountModel;
@@ -60,8 +58,8 @@ public class MetricsConverter implements Converter {
                     commons.remove("attributes");
                 for (Map<String, Object> dataValue : metrics) {
                     //dataValue = (Map<String, Object>) metrics.get("metrics");
-                    log.info("this is the attribute" + dataValue.get("attributes"));
-                    log.info("this is the type" + dataValue.get("type"));
+                    log.debug("this is the attribute" + dataValue.get("attributes"));
+                    log.debug("this is the type" + dataValue.get("type"));
                     if (commons != null)
                         dataValue.putAll(commons);
 
