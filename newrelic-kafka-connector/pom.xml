@@ -138,9 +138,10 @@
                             <dockerName>cp-kafka-connect</dockerName>
                             <dockerTag>${project.version}</dockerTag>
                             <licenses>
-                                <license.name>Apache License, Version 2.0</license.name>
-                                <license.url>http://www.apache.org/licenses/LICENSE-2.0</license.url>
-
+                                <license>
+                                    <name>Apache License, Version 2.0</name>
+                                    <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+                                </license>
                             </licenses>
 
                             <componentTypes>
