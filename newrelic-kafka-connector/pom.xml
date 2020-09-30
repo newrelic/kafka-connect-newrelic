@@ -134,9 +134,7 @@
                             <ownerUrl>https://newrelic.com/</ownerUrl>
                             <ownerLogo>logos/newrelic.png</ownerLogo>
 
-                            <dockerNamespace>confluentinc</dockerNamespace>
-                            <dockerName>cp-kafka-connect</dockerName>
-                            <dockerTag>${project.version}</dockerTag>
+
                             <licenses>
                                 <license>
                                     <name>Apache License, Version 2.0</name>
