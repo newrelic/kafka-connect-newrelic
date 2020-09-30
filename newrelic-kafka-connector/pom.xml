@@ -124,7 +124,7 @@
                             <logo>logos/newrelic.png</logo>
 
                             <supportProviderName>New Relic, Inc.</supportProviderName>
-                            <supportSummary>New Relic supports the New Relic sink connector alongside community members as part of its Confluent Platform open source offering.</supportSummary>
+                            <supportSummary>New Relic supports the New Relic sink connector alongside community members as part of its New Relic platform open source offering.</supportSummary>
                             <supportUrl>https://github.com/newrelic/kafka-connect-newrelic</supportUrl>
                             <supportLogo>logos/newrelic.png</supportLogo>
 
