@@ -54,7 +54,7 @@ public class TelemetryEventsSinkTaskTest {
         sinkTask.eventSender = mock(EventBatchSender.class);
         sinkTask.retriedCount = 0;
 
-        Collection<SinkRecord> records = new ArrayList<SinkRecord>();
+        Collection<SinkRecord> records = new ArrayList<>();
         SchemaAndValue events = new EventsConverter().toConnectData(eventJSON, eventJSON.getBytes());
 
         records.add(new SinkRecord("test", 0, null, null, null, events.value(), 0));
@@ -69,49 +69,12 @@ public class TelemetryEventsSinkTaskTest {
 
     }
 
-    @Test
-    public void testPutEventWithBadNRURL() {
-        sinkTask.NRURL = "https://insights-collector.newrelic.com12/v1/accounts/events";
-        sinkTask.start(configs);
-
-        Collection<SinkRecord> records = new ArrayList<SinkRecord>();
-        SchemaAndValue events = new EventsConverter().toConnectData(eventJSON, eventJSON.getBytes());
-        ;
-
-        records.add(new SinkRecord("test", 0, null, null, null, events.value(), 0));
-
-        try {
-            sinkTask.put(records);
-        } catch (ConnectException ce) {
-            assertEquals(ce.getMessage(), "failed to connect to new relic after retries 5");
-        }
-    }
-
-    @Test
-    public void testPutEventWithBadNRURLWithDifferentRetries() {
-        sinkTask.NRURL = "https://insights-collector.newrelic.com12/v1/accounts/events";
-        configs.put(TelemetrySinkConnectorConfig.MAX_RETRIES, "3");
-        sinkTask.start(configs);
-
-        Collection<SinkRecord> records = new ArrayList<SinkRecord>();
-        SchemaAndValue events = new EventsConverter().toConnectData(eventJSON, eventJSON.getBytes());
-        ;
-
-        records.add(new SinkRecord("test", 0, null, null, null, events.value(), 0));
-
-        try {
-            sinkTask.put(records);
-        } catch (ConnectException ce) {
-            assertEquals(ce.getMessage(), "failed to connect to new relic after retries 3");
-        }
-    }
-
     @Test(expected = ConnectException.class)
-    public void testPutWithRetryApiResponse_ShouldThrowError() throws ResponseException, JsonProcessingException {
+    public void testPutWithRetryApiResponse_ShouldThrowError() throws ResponseException {
         Response tooManyResponse = new Response(429, "Please retry", null);
         sinkTask.start(configs);
         sinkTask.eventSender = mock(EventBatchSender.class);
-        Collection<SinkRecord> records = new ArrayList<SinkRecord>();
+        Collection<SinkRecord> records = new ArrayList<>();
         SchemaAndValue events = new EventsConverter().toConnectData(eventJSON, eventJSON.getBytes());
         records.add(new SinkRecord("test", 0, null, null, null, events.value(), 0));
 

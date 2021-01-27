@@ -37,6 +37,11 @@ public class TelemetrySinkConnectorConfig extends AbstractConfig {
         this(conf(), parsedConfig);
     }
 
+    private static ConfigDef configDef = new ConfigDef()
+            .define(API_KEY, Type.PASSWORD, ConfigDef.NO_DEFAULT_VALUE, new ConfigDef.NonEmptyString(), Importance.HIGH, API_KEY_DOC)
+            .define(MAX_RETRIES, Type.INT, 5, Importance.LOW, RETRIES_DOC)
+            .define(RETRY_INTERVAL_MS, Type.LONG, 1000, Importance.LOW, RETRY_INTERVAL_MS_DOC);
+
     public static ConfigDef conf() {
         ConfigDef configDef = new ConfigDef()
                 .define(API_KEY, Type.PASSWORD, Importance.HIGH, API_KEY_DOC)
