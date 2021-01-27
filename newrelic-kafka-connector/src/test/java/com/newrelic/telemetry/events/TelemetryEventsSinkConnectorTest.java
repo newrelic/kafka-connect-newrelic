@@ -1,6 +1,7 @@
 package com.newrelic.telemetry.events;
 
 import com.newrelic.telemetry.TelemetrySinkConnectorConfig;
+import org.apache.kafka.common.config.ConfigException;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -37,5 +38,11 @@ public class TelemetryEventsSinkConnectorTest {
     @Test
     public void testConfig() {
         assertEquals(TelemetrySinkConnectorConfig.conf(), sinkConnector.config());
+    }
+
+    @Test
+    public void testConfigWithApiKey_ShouldWork() {
+        Map<String, String> props = Collections.singletonMap("api.key", "abcdefghijklmnopqrstuvwxyz");
+        sinkConnector.validate(props);
     }
 }
