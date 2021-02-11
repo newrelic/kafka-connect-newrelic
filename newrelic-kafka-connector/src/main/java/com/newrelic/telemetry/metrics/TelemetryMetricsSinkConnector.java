@@ -14,12 +14,11 @@ import org.slf4j.LoggerFactory;
 
 public class TelemetryMetricsSinkConnector extends SinkConnector {
     private static Logger log = LoggerFactory.getLogger(TelemetryMetricsSinkConnector.class);
-    private TelemetrySinkConnectorConfig config;
     private Map<String, String> configProps = new HashMap<>();
 
     @Override
     public String version() {
-        return "1.0.0";
+        return "1.1.0";
     }
 
     @Override

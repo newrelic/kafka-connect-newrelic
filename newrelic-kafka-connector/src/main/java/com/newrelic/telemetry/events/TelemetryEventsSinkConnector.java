@@ -14,12 +14,11 @@ import java.util.Map;
 
 public class TelemetryEventsSinkConnector extends SinkConnector {
     private static Logger log = LoggerFactory.getLogger(TelemetryEventsSinkConnector.class);
-    private TelemetrySinkConnectorConfig config;
     private Map<String, String> configProps = new HashMap<>();
 
     @Override
     public String version() {
-        return "1.0.0";
+        return "1.1.0";
     }
 
     @Override

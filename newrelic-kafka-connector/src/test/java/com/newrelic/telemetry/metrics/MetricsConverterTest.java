@@ -1,4 +1,4 @@
-package com.newrelic.telemetry;
+package com.newrelic.telemetry.metrics;
 
 import com.newrelic.telemetry.events.EventsConverter;
 import com.newrelic.telemetry.metrics.MetricsConverter;

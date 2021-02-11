@@ -1,4 +1,4 @@
-package com.newrelic.telemetry;
+package com.newrelic.telemetry.events;
 
 import com.newrelic.telemetry.events.EventsConverter;
 import org.apache.kafka.common.errors.SerializationException;

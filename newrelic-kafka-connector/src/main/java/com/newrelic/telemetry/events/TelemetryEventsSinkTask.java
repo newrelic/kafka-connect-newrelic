@@ -1,6 +1,5 @@
 package com.newrelic.telemetry.events;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newrelic.telemetry.*;
 import com.newrelic.telemetry.events.models.EventModel;
 import com.newrelic.telemetry.exceptions.DiscardBatchException;
@@ -25,40 +24,28 @@ import java.util.function.Supplier;
 
 public class TelemetryEventsSinkTask extends SinkTask {
     private static Logger log = LoggerFactory.getLogger(TelemetryEventsSinkTask.class);
-    String apiKey = null;
     int retries;
     long retryInterval;
     public EventBatchSender eventSender = null;
-    public String NRURL="https://insights-collector.newrelic.com/v1/accounts/events";
     public int retriedCount;
-    EventBuffer eventBuffer = null;
-
-    public EventBatch eventBatch = null;
-
-    ObjectMapper mapper = null;
-
+    protected EventBuffer eventBuffer = null;
 
     @Override
     public String version() {
-        return "1.0.0";
+        return "1.1.0";
     }
 
 
     @Override
     public void start(Map<String, String> map) {
 
-        apiKey = map.get(TelemetrySinkConnectorConfig.API_KEY);
+        String apiKey = map.get(TelemetrySinkConnectorConfig.API_KEY);
         retries = map.get(TelemetrySinkConnectorConfig.MAX_RETRIES) != null ? Integer.parseInt(map.get(TelemetrySinkConnectorConfig.MAX_RETRIES)) : (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.MAX_RETRIES);
         retryInterval = map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS) != null ? Long.parseLong(map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS)) : (Long) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS);
-        mapper = new ObjectMapper();
 
-        try {
-            EventBatchSenderFactory eventFactory = EventBatchSenderFactory.fromHttpImplementation((Supplier<HttpPoster>) OkHttpPoster::new);
-            eventSender = EventBatchSender.create(eventFactory.configureWith(apiKey).endpointWithPath(new URL(NRURL)).build());
-            eventBuffer = new EventBuffer(new Attributes());
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+        EventBatchSenderFactory eventFactory = EventBatchSenderFactory.fromHttpImplementation(OkHttpPoster::new);
+        eventSender = eventFactory.createBatchSender(apiKey);
+        eventBuffer = new EventBuffer(new Attributes());
     }
 
     private Attributes buildAttributes(Map<String, Object> atts) {
@@ -93,33 +80,31 @@ public class TelemetryEventsSinkTask extends SinkTask {
                 continue;
             }
         }
-        if(!eventBuffer.getEvents().isEmpty()) {
+        EventBatch eventBatch = eventBuffer.createBatch();
+        if(eventBatch != null && !eventBatch.isEmpty()) {
             retriedCount = 0;
-
-                while (retriedCount++ < retries - 1) {
+            while (retriedCount++ < retries - 1) {
+                try {
+                    sendToNewRelic(eventBatch);
+                    break;
+                }  catch(RetriableException re) {
+                    log.error("Retrying for "+retriedCount+" time");
                     try {
-                        if(eventBatch==null)
-                            eventBatch = eventBuffer.createBatch();
-                        sendToNewRelic();
-                        break;
-                    }  catch(RetriableException re) {
-                        log.error("Retrying for "+retriedCount+" time");
-                        try {
-                            Thread.sleep(retryInterval);
-                        } catch (InterruptedException e) {
-                            log.error("Retry Sleep thread was interrupted");
-                        }
-
+                        Thread.sleep(retryInterval);
+                    } catch (InterruptedException e) {
+                        log.error("Retry Sleep thread was interrupted");
                     }
+
                 }
-                if(retriedCount==retries)
-                    throw new ConnectException("failed to connect to new relic after retries "+retriedCount);
+            }
+            if(retriedCount==retries)
+                throw new ConnectException("failed to connect to new relic after retries "+retriedCount);
             }
 
         }
 
 
-    private void sendToNewRelic() {
+    private void sendToNewRelic(final EventBatch eventBatch) {
         try {
             Response response = null;
             response = eventSender.sendBatch(eventBatch);

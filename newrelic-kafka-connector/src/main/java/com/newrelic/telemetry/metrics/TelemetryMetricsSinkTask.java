@@ -27,7 +27,6 @@ import java.util.function.Supplier;
 
 public class TelemetryMetricsSinkTask extends SinkTask {
     private static Logger log = LoggerFactory.getLogger(TelemetryMetricsSinkTask.class);
-    String apiKey = null;
     public int retriedCount;
     int retries;
     long retryInterval;
@@ -36,29 +35,22 @@ public class TelemetryMetricsSinkTask extends SinkTask {
 
     MetricBuffer metricBuffer = null;
 
-    public MetricBatch metricBatch = null;
-
-    ObjectMapper mapper = null;
-
 
     @Override
     public String version() {
-        return "1.0.0";
+        return "1.1.0";
     }
 
 
     @Override
     public void start(Map<String, String> map) {
 
-        apiKey = map.get(TelemetrySinkConnectorConfig.API_KEY);
+        String apiKey = map.get(TelemetrySinkConnectorConfig.API_KEY);
         retries = map.get(TelemetrySinkConnectorConfig.MAX_RETRIES) != null ? Integer.parseInt(map.get(TelemetrySinkConnectorConfig.MAX_RETRIES)) : (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.MAX_RETRIES);
         retryInterval = map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS) != null ? Long.parseLong(map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS)) : (Long) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS);
 
-        mapper = new ObjectMapper();
-        MetricBatchSenderFactory factory =
-                MetricBatchSenderFactory.fromHttpImplementation((Supplier<HttpPoster>) OkHttpPoster::new);
-        sender =
-                MetricBatchSender.create(factory.configureWith(apiKey).build());
+        MetricBatchSenderFactory factory = MetricBatchSenderFactory.fromHttpImplementation(OkHttpPoster::new);
+        sender = factory.createBatchSender(apiKey);
         metricBuffer = new MetricBuffer(getCommonAttributes());
     }
 
@@ -129,14 +121,12 @@ public class TelemetryMetricsSinkTask extends SinkTask {
 
 
         }
-        if(!metricBuffer.getMetrics().isEmpty()) {
+        MetricBatch metricBatch = metricBuffer.createBatch();
+        if(metricBatch != null && !metricBatch.isEmpty()) {
             retriedCount = 0;
-            metricBatch = metricBuffer.createBatch();
             while (retriedCount++ < retries - 1) {
                 try {
-                    if(metricBatch==null)
-                        metricBatch = metricBuffer.createBatch();
-                    sendToNewRelic();
+                    sendToNewRelic(metricBatch);
                     break;
                 }  catch(RetriableException re) {
                     log.info("Retrying for "+retriedCount+" time");
@@ -159,7 +149,7 @@ public class TelemetryMetricsSinkTask extends SinkTask {
 
 
 
-    private void sendToNewRelic() {
+    private void sendToNewRelic(final MetricBatch metricBatch) {
         try {
             Response response = null;
             response = sender.sendBatch(metricBatch);

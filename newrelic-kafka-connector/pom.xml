@@ -4,14 +4,14 @@
 
     <groupId>com.newrelic.telemetry</groupId>
     <artifactId>newrelic-kafka-connector</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Kafka-connect-new-relic</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kafka.version>2.5.0</kafka.version>
+        <kafka.version>2.7.0</kafka.version>
         <junit.version>4.13</junit.version>
     </properties>
 
@@ -44,12 +44,12 @@
         <dependency>
             <groupId>com.newrelic.telemetry</groupId>
             <artifactId>telemetry</artifactId>
-            <version>0.6.1</version>
+            <version>0.10.0</version>
         </dependency>
         <dependency>
             <groupId>com.newrelic.telemetry</groupId>
             <artifactId>telemetry-http-okhttp</artifactId>
-            <version>0.6.1</version>
+            <version>0.10.0</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
         <dependency>
