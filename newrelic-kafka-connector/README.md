@@ -32,7 +32,7 @@ common message formats such as Prometheus
 - Configure your plugins directory in Kafka by updating the `connect-distributed.properties` file
     - Update plugin.path to include your plugins directory created above
 - Stop and restart Kafka / Connect if it is already running
-- To check if your connector is available head over to the connect rest endpoint, by default it will be http://localhost:8083/connector-plugins/. Make sure our 2 connectors are listed `com.newrelic.telemetry.events.TelemetryEventsSinkConnector` and `com.newrelic.telemetry.metrics.TelemetryMetricsSinkConnector`.
+- To check if your connector is available head over to the connect rest endpoint, by default it will be http://localhost:8083/connector-plugins/. Make sure our 3 connectors are listed `com.newrelic.telemetry.events.TelemetryEventsSinkConnector`,`com.newrelic.telemetry.metrics.TelemetryMetricsSinkConnector`, and `com.newrelic.telemetry.logs.TelemetryLogsSinkConnector`.
 
 ### Create a Telemetry Events Connector job
 
@@ -54,7 +54,7 @@ common message formats such as Prometheus
 - Make sure you see your connector, in this case `events-connector` listed
 - To check the status (RUNNING OR PAUSED OR FAILED) use this URL http://localhost:8083/connectors/events-connector/status
 
-### Create a Telemetry METRICS Connector job
+### Create a Telemetry Metrics Connector job
 - Metrics have the same configuration as events.
 - Use Curl or Postman to post the following json on the Connect rest URL http://localhost:8083/connectors.
   ```
@@ -69,21 +69,44 @@ common message formats such as Prometheus
    }
   }
     ```
+
+### Create a Telemetry Logs Connector job
+- Logs have the same configuration as events.
+- Use Curl or Postman to post the following json on the Connect rest URL http://localhost:8083/connectors.
+  ```
+  {
+   "name": "logs-connector",
+   "config": {
+   "connector.class": "com.newrelic.telemetry.logs.TelemetryLogsSinkConnector",
+   "value.converter":"com.newrelic.telemetry.logs.LogsConverter",
+   "value.converter.schemas.enable": false,
+   "topics": "nrlogs",
+   "api.key": "<NEW_RELIC_API_KEY>"
+   }
+  }
+    ```
+
+#### Timestamps in Logs
+-  If `timestamp` field is found in the record, it will be used. 
+-  If `timestamp` is not found and `use.record.timestamp` is set to `true` then the timestamp retrieved from the Kafka record will be used.
+-  If `timestamp` is not found and `use.record.timestamp` is set to `false` then the ingestion timestamp will be used..
+
+
 ### Full list of variables you can send to connector 
   | attribute     | Required |                          description          |
   | ------------- | -------- | --------------------------------------------- |
   | name          | yes | user definable name for identifying connector |
-  |connector.class| yes | com.newrelic.telemetry.events.TelemetryEventsSinkConnector(Events) or com.newrelic.telemetry.events.TelemetryMetricsSinkConnector(Metrics)|
-  |value.converter| yes | com.newrelic.telemetry.events.EventsConverter(Events) or com.newrelic.telemetry.metrics.MetricsConverter(Metrics) |
+  |connector.class| yes | com.newrelic.telemetry.events.TelemetryEventsSinkConnector(Events), com.newrelic.telemetry.events.TelemetryMetricsSinkConnector(Metrics), or com.newrelic.telemetry.logs.TelemetryLogsSinkConnector(Logs)|
+  |value.converter| yes | com.newrelic.telemetry.events.EventsConverter(Events), com.newrelic.telemetry.metrics.MetricsConverter(Metrics), or com.newrelic.telemetry.logs.LogsConverter(Logs) |
   |topics         | yes | Coma seperated list of topics the connector listens to.|
   |api.key        | yes | NR api key |
   |nr.max.retries | no  | set max number of retries on the NR server, default is 5 |
+  |nr.timeout     | no  | set number of seconds to wait before throwing a timeout exception, default is 2 |  
   |nr.retry.interval.ms | no | set interval between retries in milli seconds, default is 1000 |
   |errors.tolerance | no | all(ignores all json errors) or none(makes connector fail on messages with incorrect format) |
   |errors.deadletterqueue.topic.name| no | dlq topic name ( messages with incorrect format are sent to this topic) |
   |errors.deadletterqueue.topic.replication.factor| no | dlq topic replication factor |
-  
-  
+  |use.record.timestamp        | no | When set to `true`, the timestamp is retrieved from the Kafka record and passed to New Relic. When set to false, the timestamp will be the ingestion timestamp. default is true |  
 
 ### Simple Message Transforms 
 - Sometimes customers want to use their own message format which is different from the standard `events` or `metrics` format.
