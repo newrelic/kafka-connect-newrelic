@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ public class TelemetryEventsSinkTask extends SinkTask {
     private static Logger log = LoggerFactory.getLogger(TelemetryEventsSinkTask.class);
     String apiKey = null;
     int retries;
+    int timeout;    
     long retryInterval;
     public EventBatchSender eventSender = null;
     public String NRURL="https://insights-collector.newrelic.com/v1/accounts/events";
@@ -40,7 +42,7 @@ public class TelemetryEventsSinkTask extends SinkTask {
 
     @Override
     public String version() {
-        return "1.0.0";
+        return "1.1.0";
     }
 
 
@@ -50,11 +52,12 @@ public class TelemetryEventsSinkTask extends SinkTask {
         apiKey = map.get(TelemetrySinkConnectorConfig.API_KEY);
         retries = map.get(TelemetrySinkConnectorConfig.MAX_RETRIES) != null ? Integer.parseInt(map.get(TelemetrySinkConnectorConfig.MAX_RETRIES)) : (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.MAX_RETRIES);
         retryInterval = map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS) != null ? Long.parseLong(map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS)) : (Long) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS);
+        timeout = map.get(TelemetrySinkConnectorConfig.TIMEOUT_SECONDS) != null ? Integer.parseInt(map.get(TelemetrySinkConnectorConfig.TIMEOUT_SECONDS)) : (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.TIMEOUT_SECONDS);        
         mapper = new ObjectMapper();
 
         try {
             EventBatchSenderFactory eventFactory = EventBatchSenderFactory.fromHttpImplementation((Supplier<HttpPoster>) OkHttpPoster::new);
-            eventSender = EventBatchSender.create(eventFactory.configureWith(apiKey).endpointWithPath(new URL(NRURL)).build());
+            eventSender = EventBatchSender.create(eventFactory.configureWith(apiKey).endpoint(new URL(NRURL)).httpPoster(new OkHttpPoster(Duration.ofSeconds(timeout))).build());
             eventBuffer = new EventBuffer(new Attributes());
         } catch (MalformedURLException e) {
             e.printStackTrace();
