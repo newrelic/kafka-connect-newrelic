@@ -1,4 +1,4 @@
-# Welcome to your  Kafka Connect New Relic connector!
+# Welcome to the New Relic Kafka Connect Sink Connector!
 
 ## Getting Up and Running.
 

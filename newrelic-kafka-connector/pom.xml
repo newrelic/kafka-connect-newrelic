@@ -4,7 +4,7 @@
 
     <groupId>com.newrelic.telemetry</groupId>
     <artifactId>newrelic-kafka-connector</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1</version>
     <packaging>jar</packaging>
 
     <name>Kafka-connect-new-relic</name>
@@ -119,7 +119,7 @@
                             <title>Kafka Connect New Relic</title>
                             <documentationUrl>https://github.com/newrelic/kafka-connect-newrelic</documentationUrl>
                             <description>
-                                New Relic connector allows moving data from Kafka to New Relic. It writes data from Kafka topic which is in a particular form like events or metrics and utilizes the NewRelic java SDK to write into New Relic.
+                                New Relic connector allows moving data from Kafka to New Relic. It writes data from Kafka topic which is in a particular form like Events, Metrics, or Logs and utilizes the New Relic Telemetry SDK to write into New Relic.
                             </description>
                             <logo>logos/newrelic.png</logo>
 
