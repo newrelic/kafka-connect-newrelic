@@ -1,5 +1,7 @@
 package com.newrelic.telemetry.events;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newrelic.telemetry.*;
 import com.newrelic.telemetry.events.models.EventModel;
@@ -85,10 +87,31 @@ public class TelemetryEventsSinkTask extends SinkTask {
         for (SinkRecord record : records) {
             try {
                 log.debug("got back record " + record.toString());
-                List<EventModel> dataValues = (List<EventModel>) record.value();
-                dataValues.forEach(eventModel -> {
-                    Event event = new Event(eventModel.eventType, buildAttributes(eventModel.otherFields()), eventModel.timestamp);
-                    eventBuffer.addEvent(event);
+
+
+                List<Object> dataValues = (List<Object>) record.value();
+
+
+                dataValues.forEach(eventReceived -> {
+                    if (eventReceived.getClass().getSimpleName().equals("String")){
+                        try {
+                            String eventString = (String) eventReceived;
+                            EventModel eventModel = new ObjectMapper().readValue(eventString, new TypeReference<EventModel>() {
+                });
+                            Event event = new Event(eventModel.eventType, buildAttributes(eventModel.otherFields()), eventModel.timestamp);
+                            log.debug("New event:" + event.toString());
+                            eventBuffer.addEvent(event);
+                        } catch (JsonProcessingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    else {
+                        EventModel eventModel = (EventModel) eventReceived;
+                        Event event = new Event(eventModel.eventType, buildAttributes(eventModel.otherFields()), eventModel.timestamp);
+                        eventBuffer.addEvent(event);
+                    }
+
+
                 });
             } catch (IllegalArgumentException ie) {
                 log.error(ie.getMessage());
