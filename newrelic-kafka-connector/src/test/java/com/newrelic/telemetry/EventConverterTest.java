@@ -1,7 +1,7 @@
 package com.newrelic.telemetry;
 
 import com.newrelic.telemetry.events.EventConverter;
-import com.newrelic.telemetry.events.models.EventModel;
+import com.newrelic.telemetry.events.Event;
 import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -59,27 +59,35 @@ public class EventConverterTest {
         sampleSchemalessRecord = new SinkRecord("myTopic", 0, null, null, null, recordMapValue, 1001, 1621466257L, TimestampType.NO_TIMESTAMP_TYPE);
     }
 
-    void testEquals(EventModel createdEvent) {
-        assertEquals("myTestEvent", createdEvent.eventType);
-        assertEquals(1621466257L, createdEvent.timestamp);
-        assertEquals("myTopic", createdEvent.otherFields().get("metadata.kafkaTopic"));
-        assertEquals("0", createdEvent.otherFields().get("metadata.kafkaPartition"));
-        assertEquals(1001L, createdEvent.otherFields().get("metadata.kafkaOffset"));
-        assertEquals("stringValue", createdEvent.otherFields().get("stringField"));
-        assertEquals(10, createdEvent.otherFields().get("intField"));
-        assertEquals(9.9f, createdEvent.otherFields().get("floatField"));
-        assertEquals("someStringValue", createdEvent.otherFields().get("flattened.field.name"));
+    void testEquals(Event createdEvent) {
+        Map<String, Object> expected = new HashMap<>();
+
+        expected.put("metadata.kafkaTopic", "myTopic");
+        expected.put("metadata.kafkaPartition", "0");
+        expected.put("metadata.kafkaOffset", 1001L);
+        expected.put("stringField", "stringValue");
+        expected.put("intField", 10);
+        expected.put("floatField", 9.9f);
+        expected.put("flattened.field.name", "someStringValue");
+
+        assertEquals("myTestEvent", createdEvent.getEventType());
+        assertEquals(1621466257L, createdEvent.getTimestamp());
+
+        Attributes attributes = createdEvent.getAttributes();
+        assertEquals(expected, attributes.asMap());
+
+
     }
 
     @Test
     public void withSchema() {
-        EventModel testEvent = EventConverter.withSchema(sampleStructRecord);
+        Event testEvent = EventConverter.toNewRelicEvent(sampleStructRecord);
         testEquals(testEvent);
     }
 
     @Test
     public void withoutSchema() {
-        EventModel testEvent = EventConverter.withoutSchema(sampleSchemalessRecord);
+        Event testEvent = EventConverter.toNewRelicEvent(sampleSchemalessRecord);
         testEquals(testEvent);
     }
 }
