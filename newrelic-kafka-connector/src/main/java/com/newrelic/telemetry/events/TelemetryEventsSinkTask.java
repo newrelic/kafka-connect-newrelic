@@ -2,7 +2,6 @@ package com.newrelic.telemetry.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newrelic.telemetry.*;
-import com.newrelic.telemetry.events.models.EventModel;
 import com.newrelic.telemetry.exceptions.DiscardBatchException;
 import com.newrelic.telemetry.exceptions.ResponseException;
 import com.newrelic.telemetry.exceptions.RetryWithBackoffException;
@@ -20,7 +19,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -42,7 +40,7 @@ public class TelemetryEventsSinkTask extends SinkTask {
 
     @Override
     public String version() {
-        return "1.1.0";
+        return "2.0";
     }
 
 
@@ -64,32 +62,12 @@ public class TelemetryEventsSinkTask extends SinkTask {
         }
     }
 
-    private Attributes buildAttributes(Map<String, Object> atts) {
-        Attributes attributes = new Attributes();
-        atts.keySet().forEach(key -> {
-            Object attributeValue = atts.get(key);
-            if (attributeValue instanceof String)
-                attributes.put(key, (String) attributeValue);
-            else if (attributeValue instanceof Number)
-                attributes.put(key, (Number) attributeValue);
-            else if (attributeValue instanceof Boolean)
-                attributes.put(key, (Boolean) attributeValue);
-
-        });
-        return attributes;
-    }
-
-
     @Override
     public void put(Collection<SinkRecord> records) {
         for (SinkRecord record : records) {
             try {
                 log.debug("got back record " + record.toString());
-                List<EventModel> dataValues = (List<EventModel>) record.value();
-                dataValues.forEach(eventModel -> {
-                    Event event = new Event(eventModel.eventType, buildAttributes(eventModel.otherFields()), eventModel.timestamp);
-                    eventBuffer.addEvent(event);
-                });
+                eventBuffer.addEvent(EventConverter.toNewRelicEvent(record));
             } catch (IllegalArgumentException ie) {
                 log.error(ie.getMessage());
                 //throw ie;
