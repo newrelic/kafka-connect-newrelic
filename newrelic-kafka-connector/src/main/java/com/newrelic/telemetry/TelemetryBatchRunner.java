@@ -1,5 +1,7 @@
 package com.newrelic.telemetry;
 
+import com.newrelic.telemetry.events.EventBatch;
+import com.newrelic.telemetry.events.EventsSinkTask;
 import com.newrelic.telemetry.logs.LogBatch;
 import com.newrelic.telemetry.metrics.MetricBatch;
 import com.newrelic.telemetry.metrics.TelemetryMetricsSinkConnector;
@@ -84,15 +86,21 @@ public class TelemetryBatchRunner<T extends Telemetry> implements Runnable {
                 log.info("Caught interruption.  Sending final batch.");
                 break;
             } finally {
-                log.info(String.format("Sending batch of %s telemetry items", buffer.size()));
-                TelemetryBatch<T> batch = createBatch.apply(buffer);
-                // No polymorphic implementation of sendBatch, only multiple dispatch.
-                if (batch instanceof MetricBatch) {
-                    client.sendBatch((MetricBatch) batch);
-                } else if (batch instanceof LogBatch) {
-                    client.sendBatch((LogBatch) batch);
-                } else if (batch instanceof MetricBatch) {
-                    client.sendBatch((MetricBatch) batch);
+                if (buffer.isEmpty()) {
+                    log.info("Empty batch.  Doing nothing");
+                } else {
+                    TelemetryBatch<T> batch = createBatch.apply(buffer);
+                    // No polymorphic implementation of sendBatch, only multiple dispatch.
+                    if (batch instanceof MetricBatch) {
+                        log.info(String.format("Sending batch of %s metrics", buffer.size()));
+                        client.sendBatch((MetricBatch) batch);
+                    } else if (batch instanceof LogBatch) {
+                        log.info(String.format("Sending batch of %s logs", buffer.size()));
+                        client.sendBatch((LogBatch) batch);
+                    } else if (batch instanceof EventBatch) {
+                        log.info(String.format("Sending batch of %s events", buffer.size()));
+                        client.sendBatch((EventBatch) batch);
+                    }
                 }
             }
 
