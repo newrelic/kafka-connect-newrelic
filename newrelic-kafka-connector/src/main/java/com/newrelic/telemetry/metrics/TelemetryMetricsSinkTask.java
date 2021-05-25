@@ -53,9 +53,9 @@ public class TelemetryMetricsSinkTask extends SinkTask {
     public void start(Map<String, String> map) {
 
         apiKey = map.get(TelemetrySinkConnectorConfig.API_KEY);
-        retries = map.get(TelemetrySinkConnectorConfig.MAX_RETRIES) != null ? Integer.parseInt(map.get(TelemetrySinkConnectorConfig.MAX_RETRIES)) : (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.MAX_RETRIES);
-        retryInterval = map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS) != null ? Long.parseLong(map.get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS)) : (Long) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.RETRY_INTERVAL_MS);
-        timeout = map.get(TelemetrySinkConnectorConfig.TIMEOUT_SECONDS) != null ? Integer.parseInt(map.get(TelemetrySinkConnectorConfig.TIMEOUT_SECONDS)) : (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.TIMEOUT_SECONDS);        
+        retries =3;
+        retryInterval = 2000;
+        timeout = 2;
 
         mapper = new ObjectMapper();
         MetricBatchSenderFactory factory =

@@ -1,6 +1,5 @@
 package com.newrelic.telemetry;
 
-import com.newrelic.telemetry.events.EventsConverter;
 import com.newrelic.telemetry.metrics.MetricsConverter;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.connect.data.SchemaAndValue;

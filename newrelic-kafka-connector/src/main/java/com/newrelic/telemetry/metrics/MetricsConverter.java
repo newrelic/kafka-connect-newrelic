@@ -1,8 +1,6 @@
 package com.newrelic.telemetry.metrics;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.newrelic.telemetry.events.models.EventModel;
 import com.newrelic.telemetry.metrics.models.CountModel;
 import com.newrelic.telemetry.metrics.models.GaugeModel;
 import com.newrelic.telemetry.metrics.models.MetricModel;
@@ -29,13 +27,8 @@ public class MetricsConverter implements Converter {
     @Override
     public byte[] fromConnectData(String s, Schema schema, Object o) {
 
-        List<EventModel> eventModels = (List<EventModel>) o;
-        try {
-            return new ObjectMapper().writeValueAsString(eventModels).getBytes();
-        } catch (JsonProcessingException e) {
-            log.error("Error while serializing events");
+
             return new byte[0];
-        }
 
     }
 

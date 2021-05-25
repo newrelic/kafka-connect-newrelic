@@ -129,7 +129,7 @@ public class TelemetryLogsSinkTaskTest {
     @Test
     public void testPutEventWithBadNRURLWithDifferentRetries()  {
         sinkTask.NRURL="https://log-api.newrelic.com12/log/v1";
-        configs.put(TelemetrySinkConnectorConfig.MAX_RETRIES,"3");
+
         sinkTask.start(configs);
 
         Collection<SinkRecord> records = new ArrayList<SinkRecord>();
