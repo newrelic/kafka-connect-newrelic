@@ -1,5 +1,6 @@
-package com.newrelic.telemetry;
+package com.newrelic.telemetry.events;
 
+import com.newrelic.telemetry.Attributes;
 import com.newrelic.telemetry.events.EventConverter;
 import com.newrelic.telemetry.events.Event;
 import org.apache.kafka.common.record.TimestampType;
