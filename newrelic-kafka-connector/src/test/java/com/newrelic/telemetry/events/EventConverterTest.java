@@ -44,9 +44,9 @@ public class EventConverterTest {
         testEquals(testEvent);
     }
 
-//    @Test
-//    public void withoutSchema() {
-//        Event testEvent = EventConverter.toNewRelicEvent(sampleSchemalessRecord);
-//        testEquals(testEvent);
-//    }
+    @Test
+    public void withoutSchema() {
+        Event testEvent = EventConverter.toNewRelicEvent(this.fixtures.sampleSchemalessRecord);
+        testEquals(testEvent);
+    }
 }
