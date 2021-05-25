@@ -30,7 +30,7 @@ public class TelemetryEventsSinkConnector extends SinkConnector {
     @Override
     public Class<? extends Task> taskClass() {
         //TODO: Return your task implementation.
-        return TelemetryEventsSinkTask.class;
+        return EventsSinkTask.class;
     }
 
     @Override

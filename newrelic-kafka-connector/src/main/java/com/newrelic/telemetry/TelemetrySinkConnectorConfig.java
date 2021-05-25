@@ -12,20 +12,17 @@ public class TelemetrySinkConnectorConfig extends AbstractConfig {
 
     public static final String API_KEY = "api.key";
     private static final String API_KEY_DOC = "API Key for New Relic.";
-    public static final String MAX_RETRIES = "nr.max.retries";
-    private static final String RETRIES_DOC = "Number of retries when New Relic servers are down.";
-
-    public static final String RETRY_INTERVAL_MS = "nr.retry.interval.ms";
-    private static final String RETRY_INTERVAL_MS_DOC = "Interval between retries in milliseconds.";
 
     public static final String USE_RECORD_TIMESTAMP = "use.record.timestamp";    
     private static final String USE_RECORD_TIMESTAMP_DOC = "When set to `true`, The timestamp "
     + "is retrieved from the Kafka record and passed to New Relic. When set to false, the timestamp will be the ingestion timestamp. By "
     + "default, this is set to true.";
 
-    public static final String TIMEOUT_SECONDS = "nr.timeout";
-    private static final String TIMEOUT_SECONDS_DOC = "Timeout for API calls in seconds. By default, this is set to 2 seconds";
+    public static final String NR_FLUSH_MAX_RECORDS = "nr.flush.max.records";
+    private static final String NR_FLUSH_MAX_RECORDS_DOC = "The maximum number of records to send in a payload";
 
+    public static final String NR_FLUSH_MAX_INTERVAL_MS = "nr.flush.max.interval.ms";
+    private static final String NR_FLUSH_MAX_INTERVAL_MS_DOC = "Maximum amount of time to wait before flushing if ";
     public final boolean useRecordTimestamp;
 
     public TelemetrySinkConnectorConfig(ConfigDef config, Map<String, String> parsedConfig) {
@@ -41,9 +38,8 @@ public class TelemetrySinkConnectorConfig extends AbstractConfig {
         ConfigDef configDef = new ConfigDef()
                 .define(API_KEY, Type.PASSWORD, Importance.HIGH, API_KEY_DOC)
                 .define(USE_RECORD_TIMESTAMP, ConfigDef.Type.BOOLEAN, true, ConfigDef.Importance.MEDIUM, USE_RECORD_TIMESTAMP_DOC)
-                .define(TIMEOUT_SECONDS, Type.INT, 2, Importance.LOW, TIMEOUT_SECONDS_DOC)
-                .define(MAX_RETRIES, Type.INT, 5, Importance.LOW, RETRIES_DOC)
-                .define(RETRY_INTERVAL_MS, Type.LONG, 1000, Importance.LOW, RETRY_INTERVAL_MS_DOC);
+                .define(NR_FLUSH_MAX_RECORDS, Type.INT, 1000, Importance.LOW, NR_FLUSH_MAX_RECORDS_DOC)
+                .define(NR_FLUSH_MAX_INTERVAL_MS, Type.INT, 1000, Importance.LOW, NR_FLUSH_MAX_INTERVAL_MS_DOC);
         return configDef;
     }
 
