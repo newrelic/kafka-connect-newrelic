@@ -11,15 +11,15 @@ import java.util.Map;
 
 public class Fixtures {
 
-    SinkRecord sampleStructRecord;
+    public SinkRecord sampleStructRecord;
 
-    SinkRecord sampleSchemalessRecord;
+    public SinkRecord sampleSchemalessRecord;
 
-    Schema schema;
+    public Schema schema;
 
-    Struct recordStructValue;
+    public Struct recordStructValue;
 
-    Map<String, Object> recordMapValue;
+    public Map<String, Object> recordMapValue;
 
     public Fixtures() {
         schema = SchemaBuilder.struct()
