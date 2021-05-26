@@ -19,7 +19,7 @@ public class LogConverter {
 
     public static final String LOG_MESSAGE = "logMessage";
     public static final String PARTITION_NAME = "partitionName";
-    public static final String LEVEL = "logLevel";
+    public static final String LOG_LEVEL = "logLevel";
 
     private static Log withSchema(SinkRecord record) {
 
@@ -40,9 +40,9 @@ public class LogConverter {
         }
 
         String logLevel = "";
-        Optional<Field> loglevelField = schema.fields().stream().filter(f -> f.name().equals(LEVEL)).findAny();
+        Optional<Field> loglevelField = schema.fields().stream().filter(f -> f.name().equals(LOG_LEVEL)).findAny();
         if (loglevelField.isPresent()) {
-            logLevel = value.getString(LEVEL);
+            logLevel = value.getString(LOG_LEVEL);
         }
 
 
@@ -101,57 +101,61 @@ public class LogConverter {
 
         Map recordMapValue = (Map)record.value();
 
-        // String eventType = "";
+        String logMessage = "";
+        if (!recordMapValue.containsKey(LOG_MESSAGE)) {
+            throw new DataException(String.format("All records must contain a '%s' field", LOG_MESSAGE));
+        } else {
+            logMessage = recordMapValue.get(LOG_MESSAGE).toString();
+        }
 
-        // if (!recordMapValue.containsKey(EVENT_TYPE_ATTRIBUTE)) {
-        //     throw new DataException(String.format("All records must contain a '%s' field", EVENT_TYPE_ATTRIBUTE));
-        // } else {
-        //     eventType = recordMapValue.get(EVENT_TYPE_ATTRIBUTE).toString();
-        // }
+        String logLevel = "";
+        if (!recordMapValue.containsKey(LOG_LEVEL)) {
+            throw new DataException(String.format("All records must contain a '%s' field", LOG_LEVEL));
+        } else {
+            logLevel = recordMapValue.get(LOG_LEVEL).toString();
+        }
 
-        // Attributes attributes = new Attributes();
 
-        // Set<Map.Entry<String, Object>> entries = recordMapValue.entrySet();
-        // entries.stream()
-        //     .filter(e -> !e.getKey().equals(EVENT_TYPE_ATTRIBUTE))
-        //     .forEach(e -> {
+        Attributes attributes = new Attributes();
 
-        //         String key = e.getKey().toString();
+        Set<Map.Entry<String, Object>> entries = recordMapValue.entrySet();
+        entries.stream()
+            .filter(l -> !l.getKey().equals(LOG_MESSAGE))
+            .forEach(l -> {
 
-        //         if (e.getValue() instanceof String) {
+                String key = l.getKey().toString();
 
-        //             attributes.put(key, new String(e.getValue().toString()));
+                if (l.getValue() instanceof String) {
 
-        //         } else if (e.getValue() instanceof Number) {
+                    attributes.put(key, new String(l.getValue().toString()));
 
-        //             if (e.getValue() instanceof Float) {
-        //                 attributes.put(key, Float.valueOf(Float.parseFloat(e.getValue().toString())));
-        //             }
-        //             else if (e.getValue() instanceof Integer) {
-        //                 attributes.put(key, Integer.valueOf(Integer.parseInt(e.getValue().toString())));
-        //             }
+                } else if (l.getValue() instanceof Number) {
 
-        //             // else if (e.getValue() instanceof Double) {
-        //             //     attributes.put(key, Double.valueOf(Double.parseDouble(e.getValue().toString())));
-        //             // }
+                    if (l.getValue() instanceof Float) {
+                        attributes.put(key, Float.valueOf(Float.parseFloat(l.getValue().toString())));
+                    }
+                    else if (l.getValue() instanceof Integer) {
+                        attributes.put(key, Integer.valueOf(Integer.parseInt(l.getValue().toString())));
+                    }
+                    else {
+                        // handle all other cases as strings
+                        attributes.put(key, new String(l.getValue().toString()));
+                    }
 
-        //             else {
-        //                 // handle all other cases as strings
-        //                 attributes.put(key, new String(e.getValue().toString()));
-        //             }
+                } else {
+                    System.out.println("not writing attribute for: " + l.getKey().toString());
+                }
 
-        //         } else {
-        //             System.out.println("not writing attribute for: " + e.getKey().toString());
-        //         }
+            });
 
-        //     });
+        // // create the log entry using the record's timestamp
+        Log newlog = Log.builder()
+        .message(logMessage)
+        .attributes(attributes)
+        .level(logLevel)
+        .build();
 
-        // // create the event using the record's timestamp
-        // //Event event = new Event(eventType, attributes, record.timestamp());
-        // Event event = new Event(eventType, attributes, record.timestamp());
-
-        // return event;
-        return null;
+        return newlog;
 
     }
 

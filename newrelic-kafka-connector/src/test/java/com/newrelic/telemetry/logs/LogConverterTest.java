@@ -42,9 +42,9 @@ public class LogConverterTest {
         testEquals(testLog);
     }
 
-    // @Test
-    // public void withoutSchema() {
-    //     Log testLog = LogConverter.toNewRelicLog(this.fixtures.sampleSchemalessRecord);
-    //     testEquals(testLog);
-    // }
+    @Test
+    public void withoutSchema() {
+        Log testLog = LogConverter.toNewRelicLog(this.fixtures.sampleSchemalessRecord);
+        testEquals(testLog);
+    }
 }
