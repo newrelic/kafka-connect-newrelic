@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.w3c.dom.Attr;
 
 import java.util.Collection;
 import java.util.concurrent.*;
@@ -28,6 +29,8 @@ public class TelemetryBatchRunnerTest {
 
     Fixtures eventFixtures = new Fixtures();
 
+    Attributes commonAttributes;
+
     TelemetryBatch<Event> createBatch(Collection<Event> buffer, Attributes attributes) {
         return new EventBatch(buffer, attributes);
     }
@@ -38,6 +41,8 @@ public class TelemetryBatchRunnerTest {
         LinkedBlockingQueue<Event> q = new LinkedBlockingQueue<>();
         this.queue = Mockito.spy(q);
         this.batchRunnerExecutor = Executors.newSingleThreadExecutor();
+        this.commonAttributes = new Attributes();
+        this.commonAttributes.put("someKey", "someVal");
     }
 
     @After
@@ -47,7 +52,7 @@ public class TelemetryBatchRunnerTest {
 
     @Test
     public void noEvents() throws Exception {
-        TelemetryBatchRunner<Event> t = new TelemetryBatchRunner<>(this.client, this::createBatch, this.queue, 10, 100, TimeUnit.MILLISECONDS);
+        TelemetryBatchRunner<Event> t = new TelemetryBatchRunner<>(this.client, this::createBatch, this.queue, 10, 100, TimeUnit.MILLISECONDS, commonAttributes);
         this.batchRunnerExecutor.execute(t);
         Thread.sleep(150);
         verify(this.client, never()).sendBatch(any(MetricBatch.class));
@@ -55,7 +60,7 @@ public class TelemetryBatchRunnerTest {
 
     @Test
     public void timeOutBatch() throws Exception {
-        TelemetryBatchRunner<Event> t = new TelemetryBatchRunner<>(this.client, this::createBatch, this.queue, 10, 300, TimeUnit.MILLISECONDS);
+        TelemetryBatchRunner<Event> t = new TelemetryBatchRunner<>(this.client, this::createBatch, this.queue, 10, 300, TimeUnit.MILLISECONDS, commonAttributes);
         this.batchRunnerExecutor.execute(t);
         for (int i = 0; i < 9; i++) {
             this.queue.add(EventConverter.toNewRelicEvent(eventFixtures.sampleStructRecord));
@@ -65,12 +70,13 @@ public class TelemetryBatchRunnerTest {
         ArgumentCaptor<EventBatch> argument = ArgumentCaptor.forClass(EventBatch.class);
         verify(this.client).sendBatch(argument.capture());
         assertEquals(9, argument.getValue().size());
+        assertEquals(this.commonAttributes, argument.getValue().getCommonAttributes());
         assertTrue(this.queue.isEmpty());
     }
 
     @Test
     public void limitBatch() throws Exception {
-        TelemetryBatchRunner<Event> t = new TelemetryBatchRunner<>(this.client, this::createBatch, this.queue, 10, 300, TimeUnit.MILLISECONDS);
+        TelemetryBatchRunner<Event> t = new TelemetryBatchRunner<>(this.client, this::createBatch, this.queue, 10, 300, TimeUnit.MILLISECONDS, commonAttributes);
         this.batchRunnerExecutor.execute(t);
         for (int i = 0; i < 10; i++) {
             this.queue.add(EventConverter.toNewRelicEvent(eventFixtures.sampleStructRecord));
@@ -80,12 +86,13 @@ public class TelemetryBatchRunnerTest {
         ArgumentCaptor<EventBatch> argument = ArgumentCaptor.forClass(EventBatch.class);
         verify(this.client).sendBatch(argument.capture());
         assertEquals(10, argument.getValue().size());
+        assertEquals(this.commonAttributes, argument.getValue().getCommonAttributes());
         assertTrue(this.queue.isEmpty());
     }
 
     @Test
     public void limitAndTimeoutBatch() throws Exception {
-        TelemetryBatchRunner<Event> t = new TelemetryBatchRunner<>(this.client, this::createBatch, this.queue, 10, 300, TimeUnit.MILLISECONDS);
+        TelemetryBatchRunner<Event> t = new TelemetryBatchRunner<>(this.client, this::createBatch, this.queue, 10, 300, TimeUnit.MILLISECONDS, commonAttributes);
         this.batchRunnerExecutor.execute(t);
         for (int i = 0; i < 15; i++) {
             this.queue.add(EventConverter.toNewRelicEvent(eventFixtures.sampleStructRecord));
@@ -96,6 +103,7 @@ public class TelemetryBatchRunnerTest {
         verify(this.client, times(2)).sendBatch(argument.capture());
         assertEquals(10, argument.getAllValues().get(0).size());
         assertEquals(5, argument.getAllValues().get(1).size());
+        assertEquals(this.commonAttributes, argument.getValue().getCommonAttributes());
         assertTrue(this.queue.isEmpty());
     }
 

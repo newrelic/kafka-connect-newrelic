@@ -4,6 +4,7 @@ import com.newrelic.telemetry.Attributes;
 import com.newrelic.telemetry.TelemetryBatch;
 import com.newrelic.telemetry.TelemetrySinkTask;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.w3c.dom.Attr;
 
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
@@ -12,6 +13,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class EventsSinkTask extends TelemetrySinkTask<Event> {
 
     private LinkedBlockingQueue<Event> queue;
+
+    private Attributes commonAttributes;
 
     public EventsSinkTask() {
         super();
@@ -32,4 +35,5 @@ public class EventsSinkTask extends TelemetrySinkTask<Event> {
     public BlockingQueue<Event> getQueue() {
         return this.queue;
     }
+
 }

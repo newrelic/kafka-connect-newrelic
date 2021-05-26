@@ -7,6 +7,7 @@ import com.newrelic.telemetry.metrics.MetricBatch;
 import com.newrelic.telemetry.metrics.TelemetryMetricsSinkConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Attr;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,7 +34,9 @@ public class TelemetryBatchRunner<T extends Telemetry> implements Runnable {
 
     private final TimeUnit unit;
 
-    public TelemetryBatchRunner(TelemetryClient client, BiFunction<Collection<T>, Attributes, TelemetryBatch<T>>createBatch, BlockingQueue<T> queue, int numElements, long timeout, TimeUnit unit) {
+    private final Attributes commonAttributes;
+
+    public TelemetryBatchRunner(TelemetryClient client, BiFunction<Collection<T>, Attributes, TelemetryBatch<T>>createBatch, BlockingQueue<T> queue, int numElements, long timeout, TimeUnit unit, Attributes commonAttributes) {
 
         this.client = client;
         this.createBatch = createBatch;
@@ -41,6 +44,7 @@ public class TelemetryBatchRunner<T extends Telemetry> implements Runnable {
         this.numElements = numElements;
         this.timeout = timeout;
         this.unit = unit;
+        this.commonAttributes = commonAttributes;
     }
 
     /* instead of introducing another dependency for a single utility method,
@@ -91,7 +95,7 @@ public class TelemetryBatchRunner<T extends Telemetry> implements Runnable {
                 if (buffer.isEmpty()) {
                     log.info("Empty batch.  Doing nothing");
                 } else {
-                    TelemetryBatch<T> batch = createBatch.apply(buffer, new Attributes());
+                    TelemetryBatch<T> batch = createBatch.apply(buffer, commonAttributes);
                     // No polymorphic implementation of sendBatch, only multiple dispatch.
                     if (batch instanceof MetricBatch) {
                         log.info(String.format("Sending batch of %s metrics", buffer.size()));

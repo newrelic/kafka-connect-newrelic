@@ -35,6 +35,7 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
         return "2.0";
     }
 
+    final String INTEGRATION_NAME = "newrelic-kafka-connector";
 
     @Override
     public void start(Map<String, String> map) {
@@ -46,7 +47,14 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
         int nrFlushMaxRecords = 1000;// (Integer) map.getOrDefault(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS, TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS));
         long nrFlushMaxIntervalMs = 5000; //Long.parseLong(map.getOrDefault(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS, (String) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS)));
 
-        TelemetryBatchRunner<T> batchRunner = new TelemetryBatchRunner<>(client, this::createBatch, queue, nrFlushMaxRecords, nrFlushMaxIntervalMs, TimeUnit.MILLISECONDS);
+        Attributes commonAttributes = new Attributes();
+        commonAttributes.put("collector.name", INTEGRATION_NAME);
+        commonAttributes.put("collector.version", this.version());
+        commonAttributes.put("instrumentation.name", INTEGRATION_NAME);
+        commonAttributes.put("instrumentation.version", this.version());
+        commonAttributes.put("instrumentation.provider", "newRelic");
+        TelemetryBatchRunner<T> batchRunner = new TelemetryBatchRunner<>(client, this::createBatch, queue, nrFlushMaxRecords, nrFlushMaxIntervalMs, TimeUnit.MILLISECONDS, commonAttributes);
+
 
         this.batchRunnerExecutor.execute(batchRunner);
 
@@ -57,7 +65,7 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
 
         for (SinkRecord record : records) {
 
-            log.debug(String.format("processing record: \n%s", record.value().toString() ));
+            log.debug(String.format("processing record: \n%s", record.value().toString()));
             T t = this.createTelemetry(record);
 
             this.getQueue().add(t);
