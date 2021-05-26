@@ -20,18 +20,15 @@ public class LogsSinkTask extends TelemetrySinkTask<Log> {
     @Override
     public Log createTelemetry(SinkRecord record) {
         return LogConverter.toNewRelicLog(record);
-        //return null;
     }
 
     @Override
     public TelemetryBatch<Log> createBatch(Collection<Log> buffer) {
-        // return new LogBatch(buffer);
-        return null;
+        return new LogBatch(buffer, new com.newrelic.telemetry.Attributes());
     }
 
     @Override
     public BlockingQueue<Log> getQueue() {
-        // return this.queue;
-        return null;
+        return this.queue;
     }
 }
