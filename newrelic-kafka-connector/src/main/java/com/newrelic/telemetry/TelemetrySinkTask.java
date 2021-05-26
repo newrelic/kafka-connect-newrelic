@@ -26,7 +26,7 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
 
     public abstract T createTelemetry(SinkRecord record);
 
-    public abstract TelemetryBatch<T> createBatch(Collection<T> buffer);
+    public abstract TelemetryBatch<T> createBatch(Collection<T> buffer, Attributes attributes);
 
     public abstract BlockingQueue<T> getQueue();
 

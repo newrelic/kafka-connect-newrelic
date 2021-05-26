@@ -28,8 +28,8 @@ public class TelemetryBatchRunnerTest {
 
     Fixtures eventFixtures = new Fixtures();
 
-    TelemetryBatch<Event> createBatch(Collection<Event> buffer) {
-        return new EventBatch(buffer);
+    TelemetryBatch<Event> createBatch(Collection<Event> buffer, Attributes attributes) {
+        return new EventBatch(buffer, attributes);
     }
 
     @Before

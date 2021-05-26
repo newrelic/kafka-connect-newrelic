@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 
@@ -22,7 +23,7 @@ public class TelemetryBatchRunner<T extends Telemetry> implements Runnable {
 
     private final TelemetryClient client;
 
-    private final Function<Collection<T>, TelemetryBatch<T>> createBatch;
+    private final BiFunction<Collection<T>, Attributes, TelemetryBatch<T>> createBatch;
 
     private final BlockingQueue<T> queue;
 
@@ -32,7 +33,8 @@ public class TelemetryBatchRunner<T extends Telemetry> implements Runnable {
 
     private final TimeUnit unit;
 
-    public TelemetryBatchRunner(TelemetryClient client, Function<Collection<T>, TelemetryBatch<T>> createBatch, BlockingQueue<T> queue, int numElements, long timeout, TimeUnit unit) {
+    public TelemetryBatchRunner(TelemetryClient client, BiFunction<Collection<T>, Attributes, TelemetryBatch<T>>createBatch, BlockingQueue<T> queue, int numElements, long timeout, TimeUnit unit) {
+
         this.client = client;
         this.createBatch = createBatch;
         this.queue = queue;
@@ -89,7 +91,7 @@ public class TelemetryBatchRunner<T extends Telemetry> implements Runnable {
                 if (buffer.isEmpty()) {
                     log.info("Empty batch.  Doing nothing");
                 } else {
-                    TelemetryBatch<T> batch = createBatch.apply(buffer);
+                    TelemetryBatch<T> batch = createBatch.apply(buffer, new Attributes());
                     // No polymorphic implementation of sendBatch, only multiple dispatch.
                     if (batch instanceof MetricBatch) {
                         log.info(String.format("Sending batch of %s metrics", buffer.size()));

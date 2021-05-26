@@ -1,5 +1,6 @@
 package com.newrelic.telemetry.events;
 
+import com.newrelic.telemetry.Attributes;
 import com.newrelic.telemetry.TelemetryBatch;
 import com.newrelic.telemetry.TelemetrySinkTask;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -23,8 +24,8 @@ public class EventsSinkTask extends TelemetrySinkTask<Event> {
     }
 
     @Override
-    public TelemetryBatch<Event> createBatch(Collection<Event> buffer) {
-        return new EventBatch(buffer);
+    public TelemetryBatch<Event> createBatch(Collection<Event> buffer, Attributes attributes) {
+        return new EventBatch(buffer, attributes);
     }
 
     @Override
