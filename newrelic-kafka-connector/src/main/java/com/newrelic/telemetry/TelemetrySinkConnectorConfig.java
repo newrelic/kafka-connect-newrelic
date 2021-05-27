@@ -37,7 +37,7 @@ public class TelemetrySinkConnectorConfig extends AbstractConfig {
     public static ConfigDef conf() {
         ConfigDef configDef = new ConfigDef()
                 .define(API_KEY, Type.PASSWORD, Importance.HIGH, API_KEY_DOC)
-                .define(USE_RECORD_TIMESTAMP, ConfigDef.Type.BOOLEAN, true, ConfigDef.Importance.MEDIUM, USE_RECORD_TIMESTAMP_DOC)
+                .define(USE_RECORD_TIMESTAMP, ConfigDef.Type.BOOLEAN, false, ConfigDef.Importance.MEDIUM, USE_RECORD_TIMESTAMP_DOC)
                 .define(NR_FLUSH_MAX_RECORDS, Type.INT, 1000, Importance.LOW, NR_FLUSH_MAX_RECORDS_DOC)
                 .define(NR_FLUSH_MAX_INTERVAL_MS, Type.INT, 1000, Importance.LOW, NR_FLUSH_MAX_INTERVAL_MS_DOC);
         return configDef;

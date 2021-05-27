@@ -1,6 +1,8 @@
 package com.newrelic.telemetry.events;
 
 import com.newrelic.telemetry.Attributes;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -8,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class EventConverterTest {
 
@@ -30,7 +33,6 @@ public class EventConverterTest {
         expected.put("flattened.field.name", "someStringValue");
 
         assertEquals("myTestEvent", createdEvent.getEventType());
-        assertEquals(1621466257L, createdEvent.getTimestamp());
 
         Attributes attributes = createdEvent.getAttributes();
         assertEquals(expected, attributes.asMap());
@@ -42,11 +44,27 @@ public class EventConverterTest {
     public void withSchema() {
         Event testEvent = EventConverter.toNewRelicEvent(this.fixtures.sampleStructRecord);
         testEquals(testEvent);
+        assertTrue(System.currentTimeMillis() - testEvent.getTimestamp() < 100);
+    }
+
+    @Test
+    public void withSchemaAndTimestamp() {
+        Event testEvent = EventConverter.toNewRelicEvent(this.fixtures.sampleStructWithTimestampRecord);
+        testEquals(testEvent);
+        assertEquals(50000L, testEvent.getTimestamp());
     }
 
     @Test
     public void withoutSchema() {
         Event testEvent = EventConverter.toNewRelicEvent(this.fixtures.sampleSchemalessRecord);
         testEquals(testEvent);
+        assertTrue(System.currentTimeMillis() - testEvent.getTimestamp() < 100);
+    }
+
+    @Test
+    public void withoutSchemaAndTimestamp() {
+        Event testEvent = EventConverter.toNewRelicEvent(this.fixtures.sampleSchemalessWithTimestampRecord);
+        testEquals(testEvent);
+        assertEquals(50000L, testEvent.getTimestamp());
     }
 }

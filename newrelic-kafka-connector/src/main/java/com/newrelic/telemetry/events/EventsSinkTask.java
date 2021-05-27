@@ -23,7 +23,12 @@ public class EventsSinkTask extends TelemetrySinkTask<Event> {
 
     @Override
     public Event createTelemetry(SinkRecord record) {
-        return EventConverter.toNewRelicEvent(record);
+        Event e = EventConverter.toNewRelicEvent(record);
+        if (this.useRecordTimestamp) {
+            return new Event(e.getEventType(), e.getAttributes(), record.timestamp());
+        } else {
+            return e;
+        }
     }
 
     @Override

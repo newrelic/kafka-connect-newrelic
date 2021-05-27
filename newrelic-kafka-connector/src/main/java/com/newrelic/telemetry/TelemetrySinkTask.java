@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,6 +17,13 @@ import java.util.concurrent.TimeUnit;
 
 
 public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
+
+    protected boolean useRecordTimestamp = (Boolean) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.USE_RECORD_TIMESTAMP);
+
+    protected int nrFlushMaxRecords = (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS);
+
+    protected long nrFlushMaxIntervalMs = (Long) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS);
+
     private static Logger log = LoggerFactory.getLogger(TelemetrySinkTask.class);
 
     private ExecutorService batchRunnerExecutor;
@@ -44,8 +52,9 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
         BaseConfig bc = new BaseConfig(apiKey, true);
         TelemetryClient client = TelemetryClient.create(OkHttpPoster::new, bc);
 
-        int nrFlushMaxRecords = 1000;// (Integer) map.getOrDefault(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS, TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS));
-        long nrFlushMaxIntervalMs = 5000; //Long.parseLong(map.getOrDefault(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS, (String) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS)));
+        this.nrFlushMaxRecords = Optional.of(map.get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS)).map(Integer::parseInt).orElse((Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS));
+        this.nrFlushMaxIntervalMs = Optional.of(map.get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS)).map(Integer::parseInt).orElse((Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS));;
+        this.useRecordTimestamp = Optional.of(map.get(TelemetrySinkConnectorConfig.USE_RECORD_TIMESTAMP)).map(Boolean::parseBoolean).orElse((Boolean) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.USE_RECORD_TIMESTAMP));;
 
         Attributes commonAttributes = new Attributes();
         commonAttributes.put("collector.name", INTEGRATION_NAME);
@@ -53,7 +62,7 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
         commonAttributes.put("instrumentation.name", INTEGRATION_NAME);
         commonAttributes.put("instrumentation.version", this.version());
         commonAttributes.put("instrumentation.provider", "newRelic");
-        TelemetryBatchRunner<T> batchRunner = new TelemetryBatchRunner<>(client, this::createBatch, queue, nrFlushMaxRecords, nrFlushMaxIntervalMs, TimeUnit.MILLISECONDS, commonAttributes);
+        TelemetryBatchRunner<T> batchRunner = new TelemetryBatchRunner<>(client, this::createBatch, queue, this.nrFlushMaxRecords, this.nrFlushMaxIntervalMs, TimeUnit.MILLISECONDS, commonAttributes);
 
 
         this.batchRunnerExecutor.execute(batchRunner);
@@ -66,6 +75,7 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
         for (SinkRecord record : records) {
 
             log.debug(String.format("processing record: \n%s", record.value().toString()));
+
             T t = this.createTelemetry(record);
 
             this.getQueue().add(t);

@@ -20,6 +20,8 @@ public class EventConverter {
 
     public static final String EVENT_TYPE_ATTRIBUTE = "eventType";
 
+    public static final String TIMESTAMP_ATTRIBUTE = "timestamp";
+
     private static Event withSchema(SinkRecord record) {
 
         if (!(record.value() instanceof Struct)) {
@@ -38,7 +40,7 @@ public class EventConverter {
 
         // add fields from the record
         schema.fields().stream()
-                .filter(f -> !f.name().equals(EVENT_TYPE_ATTRIBUTE))
+                .filter(f -> !(f.name().equals(EVENT_TYPE_ATTRIBUTE) || f.name().equals(TIMESTAMP_ATTRIBUTE)))
                 .forEach(f -> {
                     switch(f.schema().type()){
                         case BOOLEAN:
@@ -68,8 +70,12 @@ public class EventConverter {
                     }
                 });
 
-        // create the event using the record's timestamp
-        Event event = new Event(value.getString(EVENT_TYPE_ATTRIBUTE), attributes, record.timestamp());
+        Event event;
+        if (schema.field(TIMESTAMP_ATTRIBUTE) != null) {
+            event = new Event(value.getString(EVENT_TYPE_ATTRIBUTE), attributes, value.getInt64(TIMESTAMP_ATTRIBUTE));
+        } else {
+            event = new Event(value.getString(EVENT_TYPE_ATTRIBUTE), attributes);
+        }
 
         return event;
 
@@ -85,19 +91,15 @@ public class EventConverter {
 
         Map recordMapValue = (Map)record.value();
 
-        String eventType = "";
-
         if (!recordMapValue.containsKey(EVENT_TYPE_ATTRIBUTE)) {
             throw new DataException(String.format("All records must contain a '%s' field", EVENT_TYPE_ATTRIBUTE));
-        } else {
-            eventType = recordMapValue.get(EVENT_TYPE_ATTRIBUTE).toString();
         }
 
         Attributes attributes = new Attributes();
 
         Set<Map.Entry<String, Object>> entries = recordMapValue.entrySet();
         entries.stream()
-            .filter(e -> !e.getKey().equals(EVENT_TYPE_ATTRIBUTE))
+            .filter(e -> !(e.getKey().equals(EVENT_TYPE_ATTRIBUTE) || e.getKey().equals(TIMESTAMP_ATTRIBUTE)))
             .forEach(e -> {
 
                 String key = e.getKey().toString();
@@ -130,9 +132,12 @@ public class EventConverter {
 
             });
 
-        // create the event using the record's timestamp
-        //Event event = new Event(eventType, attributes, record.timestamp());
-        Event event = new Event(eventType, attributes, record.timestamp());
+        Event event;
+        if (recordMapValue.containsKey(TIMESTAMP_ATTRIBUTE)) {
+            event = new Event((String) recordMapValue.get(EVENT_TYPE_ATTRIBUTE), attributes, (Long) recordMapValue.get(TIMESTAMP_ATTRIBUTE));
+        } else {
+            event = new Event((String) recordMapValue.get(EVENT_TYPE_ATTRIBUTE), attributes);
+        }
 
         return event;
 
