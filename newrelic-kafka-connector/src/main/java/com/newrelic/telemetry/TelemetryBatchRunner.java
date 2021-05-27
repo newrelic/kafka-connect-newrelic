@@ -89,22 +89,22 @@ public class TelemetryBatchRunner<T extends Telemetry> implements Runnable {
             try {
                 int added = drain(this.queue, buffer, this.numElements, this.timeout, this.unit);
             } catch (InterruptedException e) {
-                log.info("Caught interruption.  Sending final batch.");
+                log.info(String.format("Caught interruption.  Sending final batch.  size: %s", buffer.size()));
                 break;
             } finally {
                 if (buffer.isEmpty()) {
-                    log.info("Empty batch.  Doing nothing");
+                    log.debug("Empty batch.  Doing nothing");
                 } else {
                     TelemetryBatch<T> batch = createBatch.apply(buffer, commonAttributes);
                     // No polymorphic implementation of sendBatch, only multiple dispatch.
                     if (batch instanceof MetricBatch) {
-                        log.info(String.format("Sending batch of %s metrics", buffer.size()));
+                        log.debug(String.format("Sending batch of %s metrics", buffer.size()));
                         client.sendBatch((MetricBatch) batch);
                     } else if (batch instanceof LogBatch) {
-                        log.info(String.format("Sending batch of %s logs", buffer.size()));
+                        log.debug(String.format("Sending batch of %s logs", buffer.size()));
                         client.sendBatch((LogBatch) batch);
                     } else if (batch instanceof EventBatch) {
-                        log.info(String.format("Sending batch of %s events", buffer.size()));
+                        log.debug(String.format("Sending batch of %s events", buffer.size()));
                         client.sendBatch((EventBatch) batch);
                     }
                 }

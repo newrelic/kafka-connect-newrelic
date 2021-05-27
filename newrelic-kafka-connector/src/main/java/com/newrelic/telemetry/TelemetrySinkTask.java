@@ -83,7 +83,7 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
 
     @Override
     public void stop() {
-        this.batchRunnerExecutor.shutdown();
+        this.batchRunnerExecutor.shutdownNow();
     }
 
 }
