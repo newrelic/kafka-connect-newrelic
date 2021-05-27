@@ -17,9 +17,7 @@ import java.util.stream.*;
  */
 public class LogConverter {
 
-    public static final String LOG_MESSAGE = "logMessage";
-    public static final String PARTITION_NAME = "partitionName";
-    public static final String LOG_LEVEL = "logLevel";
+    public static final String LOG_MESSAGE = "message";
 
     private static Log withSchema(SinkRecord record) {
 
@@ -39,52 +37,45 @@ public class LogConverter {
             logMessage = value.getString(LOG_MESSAGE);
         }
 
-        String logLevel = "";
-        Optional<Field> loglevelField = schema.fields().stream().filter(f -> f.name().equals(LOG_LEVEL)).findAny();
-        if (loglevelField.isPresent()) {
-            logLevel = value.getString(LOG_LEVEL);
-        }
-
-
         Attributes attributes = new Attributes();
 
         // add fields from the record
         schema.fields().stream()
-                .filter(f -> !f.name().equals(LOG_MESSAGE))
-                .forEach(f -> {
-                    switch(f.schema().type()){
-                        case BOOLEAN:
-                            attributes.put(f.name(), value.getBoolean(f.name()));
-                            break;
-                        case FLOAT32:
-                            attributes.put(f.name(), value.getFloat32(f.name()));
-                            break;
-                        case FLOAT64:
-                            attributes.put(f.name(), value.getFloat64(f.name()));
-                            break;
-                        case INT16:
-                            attributes.put(f.name(), value.getInt16(f.name()));
-                            break;
-                        case INT32:
-                            attributes.put(f.name(), value.getInt32(f.name()));
-                            break;
-                        case INT64:
-                            attributes.put(f.name(), value.getInt64(f.name()));
-                            break;
-                        case INT8:
-                            attributes.put(f.name(), value.getInt8(f.name()));
-                            break;
-                        default:
-                            attributes.put(f.name(), value.getString(f.name()));
-                            break;
-                    }
-                });
+            .filter(f -> !f.name().equals(LOG_MESSAGE))
+            .forEach(f -> {
+                switch(f.schema().type()){
+                    case BOOLEAN:
+                        attributes.put(f.name(), value.getBoolean(f.name()));
+                        break;
+                    case FLOAT32:
+                        attributes.put(f.name(), value.getFloat32(f.name()));
+                        break;
+                    case FLOAT64:
+                        attributes.put(f.name(), value.getFloat64(f.name()));
+                        break;
+                    case INT16:
+                        attributes.put(f.name(), value.getInt16(f.name()));
+                        break;
+                    case INT32:
+                        attributes.put(f.name(), value.getInt32(f.name()));
+                        break;
+                    case INT64:
+                        attributes.put(f.name(), value.getInt64(f.name()));
+                        break;
+                    case INT8:
+                        attributes.put(f.name(), value.getInt8(f.name()));
+                        break;
+                    default:
+                        attributes.put(f.name(), value.getString(f.name()));
+                        break;
+                }
+            });
+
 
         // create the log using the record's timestamp
         Log newlog = Log.builder()
-        .attributes(attributes)
         .message(logMessage)
-        .level(logLevel)
+        .attributes(attributes)
         .build();
 
         return newlog;
@@ -100,6 +91,7 @@ public class LogConverter {
         }
 
         Map recordMapValue = (Map)record.value();
+        Attributes attributes = new Attributes();
 
         String logMessage = "";
         if (!recordMapValue.containsKey(LOG_MESSAGE)) {
@@ -108,29 +100,14 @@ public class LogConverter {
             logMessage = recordMapValue.get(LOG_MESSAGE).toString();
         }
 
-        String logLevel = "";
-        if (!recordMapValue.containsKey(LOG_LEVEL)) {
-            throw new DataException(String.format("All records must contain a '%s' field", LOG_LEVEL));
-        } else {
-            logLevel = recordMapValue.get(LOG_LEVEL).toString();
-        }
-
-
-        Attributes attributes = new Attributes();
-
         Set<Map.Entry<String, Object>> entries = recordMapValue.entrySet();
         entries.stream()
-            .filter(l -> !l.getKey().equals(LOG_MESSAGE))
+            .filter(e -> !e.getKey().equals(LOG_MESSAGE))
             .forEach(l -> {
-
                 String key = l.getKey().toString();
-
                 if (l.getValue() instanceof String) {
-
                     attributes.put(key, new String(l.getValue().toString()));
-
                 } else if (l.getValue() instanceof Number) {
-
                     if (l.getValue() instanceof Float) {
                         attributes.put(key, Float.valueOf(Float.parseFloat(l.getValue().toString())));
                     }
@@ -141,18 +118,15 @@ public class LogConverter {
                         // handle all other cases as strings
                         attributes.put(key, new String(l.getValue().toString()));
                     }
-
                 } else {
                     System.out.println("not writing attribute for: " + l.getKey().toString());
                 }
-
             });
 
         // // create the log entry using the record's timestamp
         Log newlog = Log.builder()
         .message(logMessage)
         .attributes(attributes)
-        .level(logLevel)
         .build();
 
         return newlog;

@@ -24,12 +24,11 @@ public class LogConverterTest {
         expected.put("metadata.kafkaTopic", "myTopic");
         expected.put("metadata.kafkaPartition", "0");
         expected.put("metadata.kafkaOffset", 1001L);
-        expected.put("partitionName", "myPartition");
-        expected.put("logLevel", "DEBUG");
+        expected.put("aStringAttribute", "a string attribute");
+        expected.put("anIntAttribute", 123);
 
-        assertEquals("this is the log message", createdLog.getMessage());
-        assertEquals("DEBUG", createdLog.getLevel());
-        // assertEquals(1621466257L, createdLog.getTimestamp());
+        // expected.put("message", "{\"service-name\": \"login-service\", \"user\": {\"id\": 123, \"name\": \"alice\"}}");
+        assertEquals("{\"service-name\": \"login-service\", \"user\": {\"id\": 123, \"name\": \"alice\"}}", createdLog.getMessage());
 
         Attributes attributes = createdLog.getAttributes();
         assertEquals(expected, attributes.asMap());
@@ -47,4 +46,5 @@ public class LogConverterTest {
         Log testLog = LogConverter.toNewRelicLog(this.fixtures.sampleSchemalessRecord);
         testEquals(testLog);
     }
+
 }

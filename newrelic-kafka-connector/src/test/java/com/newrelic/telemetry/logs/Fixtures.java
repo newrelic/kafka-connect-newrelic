@@ -12,26 +12,25 @@ import java.util.Map;
 public class Fixtures {
 
     SinkRecord sampleStructRecord;
-
     SinkRecord sampleSchemalessRecord;
-
     Schema schema;
-
     Struct recordStructValue;
-
     Map<String, Object> recordMapValue;
 
     public Fixtures() {
+
+        // CASE: message is embedded JSON
+
         schema = SchemaBuilder.struct()
-                .field("partitionName", Schema.STRING_SCHEMA)
-                .field("logMessage", Schema.STRING_SCHEMA)
-                .field("logLevel", Schema.STRING_SCHEMA)
-                .build();
+        .field("message", Schema.STRING_SCHEMA)
+        .field("aStringAttribute", Schema.STRING_SCHEMA)
+        .field("anIntAttribute", Schema.INT32_SCHEMA)
+        .build();
 
         recordMapValue = new HashMap<>();
-        recordMapValue.put("partitionName", "myPartition");
-        recordMapValue.put("logMessage", "this is the log message");
-        recordMapValue.put("logLevel", "DEBUG");
+        recordMapValue.put("message", "{\"service-name\": \"login-service\", \"user\": {\"id\": 123, \"name\": \"alice\"}}");
+        recordMapValue.put("aStringAttribute","a string attribute");
+        recordMapValue.put("anIntAttribute",123);
 
         recordStructValue = new Struct(schema);
 
