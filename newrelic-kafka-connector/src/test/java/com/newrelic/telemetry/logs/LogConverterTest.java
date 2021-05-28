@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class LogConverterTest {
 
@@ -39,12 +40,28 @@ public class LogConverterTest {
     public void withSchema() {
         Log testLog = LogConverter.toNewRelicLog(this.fixtures.sampleStructRecord);
         testEquals(testLog);
+        assertTrue(System.currentTimeMillis() - testLog.getTimestamp() < 100);
+    }
+
+    @Test
+    public void withSchemaAndTimestamp() {
+        Log testLog = LogConverter.toNewRelicLog(this.fixtures.sampleStructWithTimestampRecord);
+        testEquals(testLog);
+        assertEquals(50000L, testLog.getTimestamp());
     }
 
     @Test
     public void withoutSchema() {
         Log testLog = LogConverter.toNewRelicLog(this.fixtures.sampleSchemalessRecord);
         testEquals(testLog);
+        assertTrue(System.currentTimeMillis() - testLog.getTimestamp() < 100);
+    }
+
+    @Test
+    public void withoutSchemaAndTimestamp() {
+        Log testLog = LogConverter.toNewRelicLog(this.fixtures.sampleSchemalessWithTimestampRecord);
+        testEquals(testLog);
+        assertEquals(50000L, testLog.getTimestamp());
     }
 
 }

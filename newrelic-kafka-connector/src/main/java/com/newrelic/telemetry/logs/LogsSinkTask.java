@@ -1,5 +1,6 @@
 package com.newrelic.telemetry.logs;
 
+import com.newrelic.telemetry.Attributes;
 import com.newrelic.telemetry.TelemetryBatch;
 import com.newrelic.telemetry.TelemetrySinkTask;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -19,12 +20,20 @@ public class LogsSinkTask extends TelemetrySinkTask<Log> {
 
     @Override
     public Log createTelemetry(SinkRecord record) {
-        return LogConverter.toNewRelicLog(record);
+        Log l = LogConverter.toNewRelicLog(record);
+        return new Log.LogBuilder()
+                .timestamp(this.useRecordTimestamp ? record.timestamp() : l.getTimestamp())
+                .message(l.getMessage())
+                .attributes(l.getAttributes())
+                .serviceName(l.getServiceName())
+                .level(l.getLevel())
+                .throwable(l.getThrowable())
+                .build();
     }
 
     @Override
-    public TelemetryBatch<Log> createBatch(Collection<Log> buffer) {
-        return new LogBatch(buffer, new com.newrelic.telemetry.Attributes());
+    public TelemetryBatch<Log> createBatch(Collection<Log> buffer, Attributes attributes) {
+        return new LogBatch(buffer, attributes);
     }
 
     @Override

@@ -18,6 +18,7 @@ import java.util.stream.*;
 public class LogConverter {
 
     public static final String LOG_MESSAGE = "message";
+    public static final String TIMESTAMP_ATTRIBUTE = "timestamp";
 
     private static Log withSchema(SinkRecord record) {
 
@@ -41,44 +42,46 @@ public class LogConverter {
 
         // add fields from the record
         schema.fields().stream()
-            .filter(f -> !f.name().equals(LOG_MESSAGE))
-            .forEach(f -> {
-                switch(f.schema().type()){
-                    case BOOLEAN:
-                        attributes.put(f.name(), value.getBoolean(f.name()));
-                        break;
-                    case FLOAT32:
-                        attributes.put(f.name(), value.getFloat32(f.name()));
-                        break;
-                    case FLOAT64:
-                        attributes.put(f.name(), value.getFloat64(f.name()));
-                        break;
-                    case INT16:
-                        attributes.put(f.name(), value.getInt16(f.name()));
-                        break;
-                    case INT32:
-                        attributes.put(f.name(), value.getInt32(f.name()));
-                        break;
-                    case INT64:
-                        attributes.put(f.name(), value.getInt64(f.name()));
-                        break;
-                    case INT8:
-                        attributes.put(f.name(), value.getInt8(f.name()));
-                        break;
-                    default:
-                        attributes.put(f.name(), value.getString(f.name()));
-                        break;
-                }
-            });
+                .filter(f -> !(f.name().equals(LOG_MESSAGE) || f.name().equals(TIMESTAMP_ATTRIBUTE)))
+                .forEach(f -> {
+                    switch (f.schema().type()) {
+                        case BOOLEAN:
+                            attributes.put(f.name(), value.getBoolean(f.name()));
+                            break;
+                        case FLOAT32:
+                            attributes.put(f.name(), value.getFloat32(f.name()));
+                            break;
+                        case FLOAT64:
+                            attributes.put(f.name(), value.getFloat64(f.name()));
+                            break;
+                        case INT16:
+                            attributes.put(f.name(), value.getInt16(f.name()));
+                            break;
+                        case INT32:
+                            attributes.put(f.name(), value.getInt32(f.name()));
+                            break;
+                        case INT64:
+                            attributes.put(f.name(), value.getInt64(f.name()));
+                            break;
+                        case INT8:
+                            attributes.put(f.name(), value.getInt8(f.name()));
+                            break;
+                        default:
+                            attributes.put(f.name(), value.getString(f.name()));
+                            break;
+                    }
+                });
 
 
-        // create the log using the record's timestamp
-        Log newlog = Log.builder()
-        .message(logMessage)
-        .attributes(attributes)
-        .build();
+        Log.LogBuilder builder = Log.builder()
+                .message(logMessage)
+                .attributes(attributes);
 
-        return newlog;
+        if (schema.field(TIMESTAMP_ATTRIBUTE) != null) {
+            builder.timestamp(value.getInt64(TIMESTAMP_ATTRIBUTE));
+        }
+
+        return builder.build();
 
     }
 
@@ -86,11 +89,11 @@ public class LogConverter {
         // check if the value in the record is a Map.  If not, throw https://kafka.apache.org/24/javadoc/org/apache/kafka/connect/errors/DataException.html
         // then convert the map
 
-	    if (!(record.value() instanceof Map)) {
+        if (!(record.value() instanceof Map)) {
             throw new DataException("value must be instance of Map");
         }
 
-        Map recordMapValue = (Map)record.value();
+        Map recordMapValue = (Map) record.value();
         Attributes attributes = new Attributes();
 
         String logMessage = "";
@@ -102,34 +105,34 @@ public class LogConverter {
 
         Set<Map.Entry<String, Object>> entries = recordMapValue.entrySet();
         entries.stream()
-            .filter(e -> !e.getKey().equals(LOG_MESSAGE))
-            .forEach(l -> {
-                String key = l.getKey().toString();
-                if (l.getValue() instanceof String) {
-                    attributes.put(key, new String(l.getValue().toString()));
-                } else if (l.getValue() instanceof Number) {
-                    if (l.getValue() instanceof Float) {
-                        attributes.put(key, Float.valueOf(Float.parseFloat(l.getValue().toString())));
+                .filter(e -> !(e.getKey().equals(LOG_MESSAGE) || e.getKey().equals(TIMESTAMP_ATTRIBUTE)))
+                .forEach(l -> {
+                    String key = l.getKey();
+                    if (l.getValue() instanceof String) {
+                        attributes.put(key, (String) l.getValue());
+                    } else if (l.getValue() instanceof Number) {
+                        if (l.getValue() instanceof Float) {
+                            attributes.put(key, (Float) l.getValue());
+                        } else if (l.getValue() instanceof Integer) {
+                            attributes.put(key, (Integer) l.getValue());
+                        } else {
+                            // handle all other cases as strings
+                            attributes.put(key, new String(l.getValue().toString()));
+                        }
+                    } else {
+                        System.out.println("not writing attribute for: " + l.getKey().toString());
                     }
-                    else if (l.getValue() instanceof Integer) {
-                        attributes.put(key, Integer.valueOf(Integer.parseInt(l.getValue().toString())));
-                    }
-                    else {
-                        // handle all other cases as strings
-                        attributes.put(key, new String(l.getValue().toString()));
-                    }
-                } else {
-                    System.out.println("not writing attribute for: " + l.getKey().toString());
-                }
-            });
+                });
 
-        // // create the log entry using the record's timestamp
-        Log newlog = Log.builder()
-        .message(logMessage)
-        .attributes(attributes)
-        .build();
+        Log.LogBuilder builder = Log.builder()
+                .message(logMessage)
+                .attributes(attributes);
 
-        return newlog;
+        if (recordMapValue.containsKey(TIMESTAMP_ATTRIBUTE)) {
+            builder.timestamp((Long) recordMapValue.get(TIMESTAMP_ATTRIBUTE));
+        }
+
+        return builder.build();
 
     }
 
@@ -139,7 +142,7 @@ public class LogConverter {
         if (record.valueSchema() == null) {
             log = withoutSchema(record);
         } else {
-           log = withSchema(record);
+            log = withSchema(record);
         }
 
         Attributes attributes = log.getAttributes();
