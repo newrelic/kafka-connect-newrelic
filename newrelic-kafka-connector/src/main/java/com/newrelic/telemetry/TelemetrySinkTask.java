@@ -22,7 +22,7 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
 
     protected int nrFlushMaxRecords = (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS);
 
-    protected long nrFlushMaxIntervalMs = (Long) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS);
+    protected int nrFlushMaxIntervalMs = (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS);
 
     private static Logger log = LoggerFactory.getLogger(TelemetrySinkTask.class);
 
@@ -52,9 +52,9 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
         BaseConfig bc = new BaseConfig(apiKey, true);
         TelemetryClient client = TelemetryClient.create(OkHttpPoster::new, bc);
 
-        this.nrFlushMaxRecords = Optional.of(map.get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS)).map(Integer::parseInt).orElse((Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS));
-        this.nrFlushMaxIntervalMs = Optional.of(map.get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS)).map(Integer::parseInt).orElse((Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS));;
-        this.useRecordTimestamp = Optional.of(map.get(TelemetrySinkConnectorConfig.USE_RECORD_TIMESTAMP)).map(Boolean::parseBoolean).orElse((Boolean) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.USE_RECORD_TIMESTAMP));;
+        this.nrFlushMaxRecords = Optional.ofNullable(map.get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS)).map(Integer::parseInt).orElse((Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS));
+        this.nrFlushMaxIntervalMs = Optional.ofNullable(map.get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS)).map(Integer::parseInt).orElse((Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS));;
+        this.useRecordTimestamp = Optional.ofNullable(map.get(TelemetrySinkConnectorConfig.USE_RECORD_TIMESTAMP)).map(Boolean::parseBoolean).orElse((Boolean) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.USE_RECORD_TIMESTAMP));;
 
         Attributes commonAttributes = new Attributes();
         commonAttributes.put("collector.name", INTEGRATION_NAME);
