@@ -18,8 +18,6 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
 
-    protected boolean useRecordTimestamp = (Boolean) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.USE_RECORD_TIMESTAMP);
-
     protected int nrFlushMaxRecords = (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS);
 
     protected int nrFlushMaxIntervalMs = (Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS);
@@ -55,7 +53,6 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
 
         this.nrFlushMaxRecords = Optional.ofNullable(map.get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS)).map(Integer::parseInt).orElse((Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS));
         this.nrFlushMaxIntervalMs = Optional.ofNullable(map.get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS)).map(Integer::parseInt).orElse((Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_INTERVAL_MS));;
-        this.useRecordTimestamp = Optional.ofNullable(map.get(TelemetrySinkConnectorConfig.USE_RECORD_TIMESTAMP)).map(Boolean::parseBoolean).orElse((Boolean) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.USE_RECORD_TIMESTAMP));;
 
         Attributes commonAttributes = new Attributes();
         commonAttributes.put("collector.name", INTEGRATION_NAME);

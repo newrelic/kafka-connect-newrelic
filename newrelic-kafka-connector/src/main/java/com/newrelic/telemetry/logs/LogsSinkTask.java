@@ -20,12 +20,7 @@ public class LogsSinkTask extends TelemetrySinkTask<Log> {
 
     @Override
     public Log createTelemetry(SinkRecord record) {
-        Log l = LogConverter.toNewRelicLog(record);
-        return new Log.LogBuilder()
-                .timestamp(this.useRecordTimestamp ? record.timestamp() : l.getTimestamp())
-                .message(l.getMessage())
-                .attributes(l.getAttributes())
-                .build();
+        return LogConverter.toNewRelicLog(record);
     }
 
     @Override
