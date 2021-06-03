@@ -25,7 +25,7 @@ jobs:
         run: |
           pat="-rc-[0-9]+$"
           if [[ $GITHUB_REF =~ $pat ]]; then prerel="true"; else prerel="false"; fi
-          echo ::set-output name=is_prerelease::${prerel}
+          echo "::set-output name=is_prerelease::${prerel}"
       - name: "Auto Release"
         uses: "marvinpinto/action-automatic-releases@v1.2.0"
         with:
