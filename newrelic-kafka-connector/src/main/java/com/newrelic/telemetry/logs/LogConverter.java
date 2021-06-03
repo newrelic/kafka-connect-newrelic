@@ -31,14 +31,6 @@ public class LogConverter {
 
         Schema schema = record.valueSchema();
 
-        String logMessage = "";
-        Optional<Field> logMessageField = schema.fields().stream().filter(f -> f.name().equals(LOG_MESSAGE)).findAny();
-        if (!logMessageField.isPresent()) {
-            throw new DataException(String.format("All records must contain a '%s' field", LOG_MESSAGE));
-        } else {
-            logMessage = value.getString(LOG_MESSAGE);
-        }
-
         Attributes attributes = new Attributes();
 
         // add fields from the record
@@ -75,11 +67,14 @@ public class LogConverter {
 
 
         Log.LogBuilder builder = Log.builder()
-                .message(logMessage)
                 .attributes(attributes);
 
         if (schema.field(TIMESTAMP_ATTRIBUTE) != null) {
             builder.timestamp(value.getInt64(TIMESTAMP_ATTRIBUTE));
+        }
+
+        if (schema.field(LOG_MESSAGE) != null) {
+            builder.message(value.getString(LOG_MESSAGE));
         }
 
         return builder.build();
@@ -96,13 +91,6 @@ public class LogConverter {
 
         Map recordMapValue = (Map) record.value();
         Attributes attributes = new Attributes();
-
-        String logMessage = "";
-        if (!recordMapValue.containsKey(LOG_MESSAGE)) {
-            throw new DataException(String.format("All records must contain a '%s' field", LOG_MESSAGE));
-        } else {
-            logMessage = recordMapValue.get(LOG_MESSAGE).toString();
-        }
 
         Set<Map.Entry<String, Object>> entries = recordMapValue.entrySet();
         entries.stream()
@@ -126,11 +114,14 @@ public class LogConverter {
                 });
 
         Log.LogBuilder builder = Log.builder()
-                .message(logMessage)
                 .attributes(attributes);
 
         if (recordMapValue.containsKey(TIMESTAMP_ATTRIBUTE)) {
             builder.timestamp((Long) recordMapValue.get(TIMESTAMP_ATTRIBUTE));
+        }
+
+        if (recordMapValue.containsKey(LOG_MESSAGE)) {
+            builder.message((String) recordMapValue.get(LOG_MESSAGE));
         }
 
         return builder.build();
