@@ -25,9 +25,6 @@ public class LogsSinkTask extends TelemetrySinkTask<Log> {
                 .timestamp(this.useRecordTimestamp ? record.timestamp() : l.getTimestamp())
                 .message(l.getMessage())
                 .attributes(l.getAttributes())
-                .serviceName(l.getServiceName())
-                .level(l.getLevel())
-                .throwable(l.getThrowable())
                 .build();
     }
 
