@@ -30,6 +30,6 @@ jobs:
         uses: "marvinpinto/action-automatic-releases@v1.2.0"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: "${{ steps.vars.outputs.is_prerelease }}"
+          prerelease: ${{ steps.vars.outputs.is_prerelease }}
           files: |
             newrelic-kafka-connector/target/components/packages/*.zip
