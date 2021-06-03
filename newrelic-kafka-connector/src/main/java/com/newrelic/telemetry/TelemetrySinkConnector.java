@@ -17,7 +17,7 @@ public abstract class TelemetrySinkConnector extends SinkConnector {
 
     @Override
     public String version() {
-        return "1.0.0";
+        return "2.0.0-rc-1";
     }
 
     @Override
