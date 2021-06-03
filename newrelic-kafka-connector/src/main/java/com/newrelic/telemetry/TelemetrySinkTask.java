@@ -49,7 +49,8 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
     public void start(Map<String, String> map) {
         String apiKey = map.get(TelemetrySinkConnectorConfig.API_KEY);
         BlockingQueue queue = this.getQueue();
-        BaseConfig bc = new BaseConfig(apiKey, true);
+        // set this to true to log the requests and responses to the New Relic APIs
+        BaseConfig bc = new BaseConfig(apiKey, false);
         TelemetryClient client = TelemetryClient.create(OkHttpPoster::new, bc);
 
         this.nrFlushMaxRecords = Optional.ofNullable(map.get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS)).map(Integer::parseInt).orElse((Integer) TelemetrySinkConnectorConfig.conf().defaultValues().get(TelemetrySinkConnectorConfig.NR_FLUSH_MAX_RECORDS));
