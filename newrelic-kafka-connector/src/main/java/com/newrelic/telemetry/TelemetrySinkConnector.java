@@ -1,8 +1,6 @@
-package com.newrelic.telemetry.events;
+package com.newrelic.telemetry;
 
-import com.newrelic.telemetry.TelemetrySinkConnectorConfig;
 import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,8 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TelemetryEventsSinkConnector extends SinkConnector {
-    private static Logger log = LoggerFactory.getLogger(TelemetryEventsSinkConnector.class);
+public abstract class TelemetrySinkConnector extends SinkConnector {
+    private static Logger log = LoggerFactory.getLogger(TelemetrySinkConnector.class);
     private TelemetrySinkConnectorConfig config;
     private Map<String, String> configProps = new HashMap<>();
 
@@ -25,12 +23,6 @@ public class TelemetryEventsSinkConnector extends SinkConnector {
     @Override
     public void start(Map<String, String> props) {
         configProps = props;
-    }
-
-    @Override
-    public Class<? extends Task> taskClass() {
-        //TODO: Return your task implementation.
-        return EventsSinkTask.class;
     }
 
     @Override
