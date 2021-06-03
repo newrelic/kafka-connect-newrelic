@@ -1,6 +1,7 @@
 package com.newrelic.telemetry.logs;
 
 import com.newrelic.telemetry.Attributes;
+import com.newrelic.telemetry.KafkaMetadata;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -148,9 +149,7 @@ public class LogConverter {
         Attributes attributes = log.getAttributes();
 
         // add kafka metadata fields.
-        attributes.put("metadata.kafkaTopic", record.topic());
-        attributes.put("metadata.kafkaPartition", String.valueOf(record.kafkaPartition()));
-        attributes.put("metadata.kafkaOffset", record.kafkaOffset());
+        attributes.putAll(KafkaMetadata.getAttributes(record));
 
         return log;
     }

@@ -24,9 +24,9 @@ public class EventConverterTest {
     void testEquals(Event createdEvent) {
         Map<String, Object> expected = new HashMap<>();
 
-        expected.put("metadata.kafkaTopic", "myTopic");
-        expected.put("metadata.kafkaPartition", "0");
-        expected.put("metadata.kafkaOffset", 1001L);
+        expected.put("instrumentation.metadata.kafka.topic", "myTopic");
+        expected.put("instrumentation.metadata.kafka.partition", "0");
+        expected.put("instrumentation.metadata.kafka.offset", 1001L);
         expected.put("stringField", "stringValue");
         expected.put("intField", 10);
         expected.put("floatField", 9.9f);
