@@ -1,16 +1,16 @@
 package com.newrelic.telemetry.metrics;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.newrelic.telemetry.TelemetrySinkConnectorConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class TelemetryMetricsSinkConnector extends SinkConnector {
     private static Logger log = LoggerFactory.getLogger(TelemetryMetricsSinkConnector.class);
@@ -25,13 +25,12 @@ public class TelemetryMetricsSinkConnector extends SinkConnector {
     @Override
     public void start(Map<String, String> props) {
         configProps = props;
-
     }
 
     @Override
     public Class<? extends Task> taskClass() {
         //TODO: Return your task implementation.
-        return TelemetryMetricsSinkTask.class;
+        return MetricsSinkTask.class;
     }
 
     @Override
