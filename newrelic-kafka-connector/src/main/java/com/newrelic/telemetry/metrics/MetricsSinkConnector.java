@@ -5,7 +5,7 @@ import org.apache.kafka.connect.connector.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MetricsSinkConnector extends SinkConnector {
+public class MetricsSinkConnector extends TelemetrySinkConnector {
     private static Logger log = LoggerFactory.getLogger(MetricsSinkConnector.class);
 
     @Override
