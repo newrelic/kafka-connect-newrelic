@@ -23,21 +23,7 @@ public class MetricsSinkTask extends TelemetrySinkTask<Metric> {
 
     @Override
     public Metric createTelemetry(SinkRecord record) {
-        Metric m = MetricConverter.toNewRelicMetric(record);
-
-        // TODO - figure this out, we are back at the abstract level, can't get metricType or attributes from Metric.
-
-        // if (this.useRecordTimestamp) {
-        //     // TODO: return speciic event type
-        //     // return new Metric(e.getMetricType(), e.getAttributes(), record.timestamp());
-        //     return null;
-        // } else {
-        //     return e;
-        // }
-
-        // just use system timestamp for now
-        return m;
-
+        return MetricConverter.toNewRelicMetric(record);
     }
 
     @Override
