@@ -27,10 +27,10 @@ public class MetricConverter {
     public static final String METRIC_VALUE_COUNTER = "counter.value";
     
     // not sure yet about summaries...
-    public static final String METRIC_COUNT = "count";
-    public static final String METRIC_SUM = "sum";
-    public static final String METRIC_MIN = "min";
-    public static final String METRIC_MAX = "max";
+    public static final String SUMMARY_METRIC_COUNT = "aggregated_summary.count";
+    public static final String SUMMARY_METRIC_SUM = "aggregated_summary.sum";
+    public static final String SUMMARY_METRIC_MIN = "aggregated_summary.min";
+    public static final String SUMMARY_METRIC_MAX = "aggregated_summary.max";
 
     public static final String TIMESTAMP_ATTRIBUTE = "timestamp";
 
@@ -54,10 +54,10 @@ public class MetricConverter {
         .filter(f -> !(f.name().equals(METRIC_NAME)
             || f.name().equals(METRIC_VALUE_GAUGE)
             || f.name().equals(METRIC_VALUE_COUNTER)
-            || f.name().equals(METRIC_COUNT)
-            || f.name().equals(METRIC_SUM)
-            || f.name().equals(METRIC_MIN)
-            || f.name().equals(METRIC_MAX)
+            || f.name().equals(SUMMARY_METRIC_COUNT)
+            || f.name().equals(SUMMARY_METRIC_SUM)
+            || f.name().equals(SUMMARY_METRIC_MIN)
+            || f.name().equals(SUMMARY_METRIC_MAX)
             || f.name().equals(TIMESTAMP_ATTRIBUTE)))
         .forEach(f -> {
             switch (f.schema().type()) {
@@ -112,13 +112,17 @@ public class MetricConverter {
         Optional<Field> gaugeMetricValueField = schema.fields().stream().filter(f -> f.name().equals(METRIC_VALUE_GAUGE)).findAny();
         Optional<Field> counterMetricValueField = schema.fields().stream().filter(f -> f.name().equals(METRIC_VALUE_COUNTER)).findAny();    
 
-        // todo - decide how to handle summary metrics
-
-        // gauge and counter will have 'value' - summary will not...
-        double metricValue;
+        // for summary metrics:
+        Optional<Field> summaryMetricCountField = schema.fields().stream().filter(f -> f.name().equals(SUMMARY_METRIC_COUNT)).findAny();
+        Optional<Field> summaryMetricSumField = schema.fields().stream().filter(f -> f.name().equals(SUMMARY_METRIC_SUM)).findAny();
+        Optional<Field> summaryMetricMinField = schema.fields().stream().filter(f -> f.name().equals(SUMMARY_METRIC_MIN)).findAny();
+        Optional<Field> summaryMetricMaxField = schema.fields().stream().filter(f -> f.name().equals(SUMMARY_METRIC_MAX)).findAny();
 
         // TODO remove "= null" here, handle properly
         Metric metric = null;
+
+        // gauge and counter will have 'value'; summary will not.
+        double metricValue;
 
         // branch on metric type here; create appropriate telemetry
         if (gaugeMetricValueField.isPresent()) {
@@ -128,9 +132,30 @@ public class MetricConverter {
             metricValue = value.getFloat64(METRIC_VALUE_COUNTER);
             metric = new Count(metricName, metricValue, timestamp, timestamp, attributes);
         }
-        // else if (...) {
-            // todo - handle summary metrics
-        // }
+        else if (
+            summaryMetricCountField.isPresent() 
+            || summaryMetricSumField.isPresent()
+            || summaryMetricMinField.isPresent()
+            || summaryMetricMaxField.isPresent()
+        ) {
+            int count = 0;
+            double sum = 0;
+            double min = 0;
+            double max = 0;
+            if (summaryMetricCountField.isPresent()) {
+                count = value.getInt32(SUMMARY_METRIC_COUNT);
+            }
+            if (summaryMetricSumField.isPresent()) {
+                sum = value.getFloat64(SUMMARY_METRIC_SUM);
+            }
+            if (summaryMetricMinField.isPresent()) {
+                min = value.getFloat64(SUMMARY_METRIC_MIN);
+            }
+            if (summaryMetricMaxField.isPresent()) {
+                max = value.getFloat64(SUMMARY_METRIC_MAX);
+            }
+            metric = new Summary(metricName, count, sum, min, max, timestamp, timestamp, attributes);
+        }
 
         if (null == metric) {
             throw new DataException(String.format("withSchema: unable to create metric")); // type was '%s'", metricType));
@@ -158,10 +183,10 @@ public class MetricConverter {
                 .filter(e -> !(e.getKey().equals(METRIC_NAME) 
                 || e.getKey().equals(METRIC_VALUE_GAUGE)
                 || e.getKey().equals(METRIC_VALUE_COUNTER)
-                || e.getKey().equals(METRIC_COUNT)
-                || e.getKey().equals(METRIC_SUM)
-                || e.getKey().equals(METRIC_MIN)
-                || e.getKey().equals(METRIC_MAX)
+                || e.getKey().equals(SUMMARY_METRIC_COUNT)
+                || e.getKey().equals(SUMMARY_METRIC_SUM)
+                || e.getKey().equals(SUMMARY_METRIC_MIN)
+                || e.getKey().equals(SUMMARY_METRIC_MAX)
                 || e.getKey().equals(TIMESTAMP_ATTRIBUTE)
                 ))
                 .forEach(m -> {
@@ -209,9 +234,32 @@ public class MetricConverter {
             metricValue = Double.valueOf(recordMapValue.get(METRIC_VALUE_COUNTER).toString()).doubleValue();
             metric = new Count(metricName, metricValue, timestamp, timestamp, attributes);
         }
-        // else if (...) {
-        //   handle summary metrics
-        // }
+        else if (
+            recordMapValue.containsKey(SUMMARY_METRIC_COUNT)
+            || recordMapValue.containsKey(SUMMARY_METRIC_SUM)
+            || recordMapValue.containsKey(SUMMARY_METRIC_MIN)
+            || recordMapValue.containsKey(SUMMARY_METRIC_MAX)
+        ) {
+
+            int count = 0;
+            double sum = 0;
+            double min = 0;
+            double max = 0;
+
+            if (recordMapValue.containsKey(SUMMARY_METRIC_COUNT)){
+                count = Integer.valueOf(recordMapValue.get(SUMMARY_METRIC_COUNT).toString()).intValue();
+            }
+            if (recordMapValue.containsKey(SUMMARY_METRIC_SUM)){
+                sum = Double.valueOf(recordMapValue.get(SUMMARY_METRIC_SUM).toString()).doubleValue();
+            }
+            if (recordMapValue.containsKey(SUMMARY_METRIC_MIN)){
+                min = Double.valueOf(recordMapValue.get(SUMMARY_METRIC_MIN).toString()).doubleValue();
+            }
+            if (recordMapValue.containsKey(SUMMARY_METRIC_MAX)){
+                max = Double.valueOf(recordMapValue.get(SUMMARY_METRIC_MAX).toString()).doubleValue();
+            }
+            metric = new Summary(metricName, count, sum, min, max, timestamp, timestamp, attributes);
+        }
 
         if (null == metric) {
             throw new DataException(String.format("withoutSchema: unable to create metric")); // type was '%s'", metricType));
