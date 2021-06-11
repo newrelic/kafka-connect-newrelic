@@ -31,6 +31,7 @@ public class SummaryFixtures {
 
         SchemaBuilder builder = SchemaBuilder.struct()
                 .field("name", Schema.STRING_SCHEMA)
+                .field("metricType", Schema.STRING_SCHEMA)
                 .field("aggregated_summary.count", Schema.INT32_SCHEMA)
                 .field("aggregated_summary.sum", Schema.FLOAT64_SCHEMA)
                 .field("aggregated_summary.min", Schema.FLOAT64_SCHEMA)
@@ -43,6 +44,7 @@ public class SummaryFixtures {
 
         recordMapValue = new HashMap<>();
         recordMapValue.put("name", "prometheus_tsdb_wal_fsync_duration_seconds");
+        recordMapValue.put("metricType", "summary");
         recordMapValue.put("aggregated_summary.count", 5);
         recordMapValue.put("aggregated_summary.sum", 0.009435792);
         recordMapValue.put("aggregated_summary.min", 0.01);

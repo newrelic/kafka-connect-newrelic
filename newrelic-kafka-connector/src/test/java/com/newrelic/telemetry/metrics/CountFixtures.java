@@ -31,14 +31,16 @@ public class CountFixtures {
 
         SchemaBuilder builder = SchemaBuilder.struct()
                 .field("name", Schema.STRING_SCHEMA)
-                .field("counter.value", Schema.FLOAT64_SCHEMA)
+                .field("metricType", Schema.STRING_SCHEMA)
+                .field("value", Schema.FLOAT64_SCHEMA)
                 .field("tags.code", Schema.STRING_SCHEMA);
         schema = builder.build();
         schemaWithTimestamp = builder.field("timestamp", Schema.INT64_SCHEMA).build();
 
         recordMapValue = new HashMap<>();
         recordMapValue.put("name", "promhttp_metric_handler_requests_total");
-        recordMapValue.put("counter.value", 1304.0);
+        recordMapValue.put("metricType", "counter");
+        recordMapValue.put("value", 1304.0);
         recordMapValue.put("tags.code", "400");
 
         recordMapWithTimestampValue = new HashMap<>();
