@@ -7,16 +7,20 @@ import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
-
 import java.util.Optional;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * utilities used to convert a single record to a New Relic metric
  */
 public class MetricConverter {
+
+    private static Logger log = LoggerFactory.getLogger(MetricConverter.class);
 
     public static final String METRIC_NAME = "name";
     public static final String METRIC_TYPE = "metricType";
@@ -129,9 +133,6 @@ public class MetricConverter {
         // gauge and counter will have 'value'; summary will not.
         double metricValue;
 
-        System.out.println ("------------");
-        System.out.println (metricType);
-
         // branch on metric type here; create appropriate telemetry
         switch (metricType) {
             case "gauge":
@@ -209,7 +210,7 @@ public class MetricConverter {
                             attributes.put(key, new String(m.getValue().toString()));
                         }
                     } else {
-                        System.out.println("Metric Converter: not writing attribute for: " + m.getKey().toString());
+                        log.info("Metric Converter: not writing attribute for: " + m.getKey().toString());
                     }
                 });
 
