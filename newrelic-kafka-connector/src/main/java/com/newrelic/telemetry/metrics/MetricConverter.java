@@ -231,7 +231,18 @@ public class MetricConverter {
 
         long timestamp;
         if (recordMapValue.containsKey(TIMESTAMP_ATTRIBUTE)) {
-            timestamp = Long.valueOf(recordMapValue.get(TIMESTAMP_ATTRIBUTE).toString()).longValue();
+            try {
+                timestamp = Long.valueOf(
+                    recordMapValue.get(
+                        TIMESTAMP_ATTRIBUTE)
+                        .toString())
+                        .longValue();
+            }
+            catch (Exception e) {
+                log.debug (e.toString());
+                log.info ("uable to read timestamp value - using System time instead");
+                timestamp = java.lang.System.currentTimeMillis();
+            }
         } else {
             timestamp = java.lang.System.currentTimeMillis();
         }

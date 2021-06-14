@@ -32,7 +32,7 @@ public class GaugeMetricsConverterTest {
         expected.put("metadata.kafkaTopic", "myTopic");
         expected.put("metadata.kafkaPartition", "0");
         expected.put("metadata.kafkaOffset", 1001L);
-        expected.put("tags.code", "500");
+        expected.put("attributes.code", "500");
         Map<String, Object> attributes = createdGauge.getAttributes();
         assertEquals(expected, attributes);
 

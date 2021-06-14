@@ -33,7 +33,7 @@ public class GaugeFixtures {
                 .field("name", Schema.STRING_SCHEMA)
                 .field("metricType", Schema.STRING_SCHEMA)
                 .field("value", Schema.FLOAT64_SCHEMA)
-                .field("tags.code", Schema.STRING_SCHEMA);
+                .field("attributes.code", Schema.STRING_SCHEMA);
         schema = builder.build();
         schemaWithTimestamp = builder.field("timestamp", Schema.INT64_SCHEMA).build();
 
@@ -41,7 +41,7 @@ public class GaugeFixtures {
         recordMapValue.put("name", "prometheus_tsdb_wal_segment_current");
         recordMapValue.put("metricType", "gauge");
         recordMapValue.put("value", 1.0);
-        recordMapValue.put("tags.code", "500");
+        recordMapValue.put("attributes.code", "500");
 
         recordMapWithTimestampValue = new HashMap<>();
         recordMapWithTimestampValue.putAll(recordMapValue);
