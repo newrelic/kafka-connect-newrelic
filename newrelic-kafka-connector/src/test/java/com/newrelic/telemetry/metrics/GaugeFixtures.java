@@ -29,19 +29,30 @@ public class GaugeFixtures {
 
     public GaugeFixtures() {
 
+        Schema DIMENSIONS_MAP_SCHEMA = SchemaBuilder.map(
+                Schema.STRING_SCHEMA,
+                Schema.STRING_SCHEMA
+            )
+            .name("dimensionSchema")
+            .build();
+
         SchemaBuilder builder = SchemaBuilder.struct()
                 .field("name", Schema.STRING_SCHEMA)
                 .field("metricType", Schema.STRING_SCHEMA)
                 .field("value", Schema.FLOAT64_SCHEMA)
-                .field("attributes.code", Schema.STRING_SCHEMA);
+                .field("dimensions", DIMENSIONS_MAP_SCHEMA);
         schema = builder.build();
         schemaWithTimestamp = builder.field("timestamp", Schema.INT64_SCHEMA).build();
+
+        Map<String, String> dimensionsMap = new HashMap<String, String>();
+            dimensionsMap.put("code","500");
+            dimensionsMap.put("something","else");
 
         recordMapValue = new HashMap<>();
         recordMapValue.put("name", "prometheus_tsdb_wal_segment_current");
         recordMapValue.put("metricType", "gauge");
         recordMapValue.put("value", 1.0);
-        recordMapValue.put("attributes.code", "500");
+        recordMapValue.put("dimensions", dimensionsMap);
 
         recordMapWithTimestampValue = new HashMap<>();
         recordMapWithTimestampValue.putAll(recordMapValue);

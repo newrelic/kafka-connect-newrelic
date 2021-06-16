@@ -25,6 +25,7 @@ public class MetricConverter {
     public static final String METRIC_NAME = "name";
     public static final String METRIC_TYPE = "metricType";
     public static final String METRIC_VALUE = "value";
+    public static final String METRIC_DIMENSIONS = "dimensions";
     
     // not sure yet about summaries...
     public static final String SUMMARY_METRIC_COUNT = "aggregated_summary.count";
@@ -54,6 +55,7 @@ public class MetricConverter {
         .filter(f -> !(f.name().equals(METRIC_NAME)
             || f.name().equals(METRIC_TYPE)
             || f.name().equals(METRIC_VALUE)
+            || f.name().equals(METRIC_DIMENSIONS)
             || f.name().equals(SUMMARY_METRIC_COUNT)
             || f.name().equals(SUMMARY_METRIC_SUM)
             || f.name().equals(SUMMARY_METRIC_MIN)
@@ -106,6 +108,25 @@ public class MetricConverter {
             throw new DataException(String.format("All records must contain a '%s' field", metricTypeField));
         } else {
             metricType = value.getString(METRIC_TYPE);
+        }
+
+        // metrics may have dimensions
+        String dimensions = "";
+        Optional<Field> dimensionsField = schema.fields().stream().filter(
+            f -> f.name().equals(METRIC_DIMENSIONS)).findAny();
+        if (!dimensionsField.isPresent()) {
+            System.out.println("withSchema: no dimensions field was present");
+        } else {
+            Map<String,String> dimensionsMap = value.getMap(METRIC_DIMENSIONS);
+            if (null != dimensionsMap) {
+                log.debug("withSchema: got dimensions map");
+                for (Map.Entry<String, String> entry : dimensionsMap.entrySet()) {
+                    attributes.put(entry.getKey(), entry.getValue());
+                }
+            }
+            else {
+                log.debug("withSchema: not got dimensions map");
+            }
         }
 
         // timestamp may or may not be on the record
@@ -190,6 +211,7 @@ public class MetricConverter {
                 .filter(e -> !(e.getKey().equals(METRIC_NAME)
                 || e.getKey().equals(METRIC_TYPE)
                 || e.getKey().equals(METRIC_VALUE)
+                || e.getKey().equals(METRIC_DIMENSIONS)
                 || e.getKey().equals(SUMMARY_METRIC_COUNT)
                 || e.getKey().equals(SUMMARY_METRIC_SUM)
                 || e.getKey().equals(SUMMARY_METRIC_MIN)
@@ -228,6 +250,23 @@ public class MetricConverter {
         } else {
             metricType = recordMapValue.get(METRIC_TYPE).toString();
         }
+
+        if (!recordMapValue.containsKey(METRIC_DIMENSIONS)) {
+            log.debug("withoutSchema: no dimensions field was present");
+        } else {
+
+            Map<String,String> dimensionsMap = (Map<String,String>) (recordMapValue.get(METRIC_DIMENSIONS));
+            if (null != dimensionsMap) {
+                log.debug("withoutSchema: got dimensions map");
+                for (Map.Entry<String, String> entry : dimensionsMap.entrySet()) {
+                    attributes.put(entry.getKey(), entry.getValue());
+                }
+            }
+            else {
+                log.debug("withoutSchema: not got dimensions map");
+            }
+        }
+
 
         long timestamp;
         if (recordMapValue.containsKey(TIMESTAMP_ATTRIBUTE)) {
