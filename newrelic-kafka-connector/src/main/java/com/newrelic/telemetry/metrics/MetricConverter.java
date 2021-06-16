@@ -1,6 +1,7 @@
 package com.newrelic.telemetry.metrics;
 
 import com.newrelic.telemetry.Attributes;
+import com.newrelic.telemetry.KafkaMetadata;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -46,9 +47,8 @@ public class MetricConverter {
 
         // start with attributes
         Attributes attributes = new Attributes();
-        attributes.put("metadata.kafkaTopic", record.topic());
-        attributes.put("metadata.kafkaPartition", String.valueOf(record.kafkaPartition()));
-        attributes.put("metadata.kafkaOffset", record.kafkaOffset());
+        // add kafka metadata fields.
+        attributes.putAll(KafkaMetadata.getAttributes(record));
 
         // if the inbound data not in the filter list here, tread it as an attribute - i.e. will become a metric dimension
         schema.fields().stream()
@@ -202,9 +202,8 @@ public class MetricConverter {
         Map recordMapValue = (Map)record.value();
 
         Attributes attributes = new Attributes();
-        attributes.put("metadata.kafkaTopic", record.topic());
-        attributes.put("metadata.kafkaPartition", String.valueOf(record.kafkaPartition()));
-        attributes.put("metadata.kafkaOffset", record.kafkaOffset());
+        // add kafka metadata fields.
+        attributes.putAll(KafkaMetadata.getAttributes(record));
 
         Set<Map.Entry<String, Object>> entries = recordMapValue.entrySet();
         entries.stream()
@@ -335,6 +334,7 @@ public class MetricConverter {
         } else {
            metric = withSchema(record);
         }
+
         return metric;
     }
 }
