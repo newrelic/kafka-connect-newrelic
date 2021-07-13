@@ -1,114 +1,108 @@
 # Welcome to the New Relic Kafka Connect Sink Connector!
 
-## Getting Up and Running.
+This Kafka Connect Sink will ship records from Kafka topics to several of New Relic's Ingestion API endpoints, for events, metrics, or logs.
+Each endpoint uses a separate connector class, requiring a separate running instance or work cluster for each.
+See below for examples of how to use them.
 
-### Assumptions: 
-- Kafka is installed on user’s machine - A quick start can be found on the Kafka
-site
+### Installing Kafka Connect for New Relic (Sink) 
+There are two options to install:
+- Downloading a published release
+    1. download the latest release from this repository
+    2. Extract the archive
+    3. copy the extracted contents to your Kafka distribution's connect plugins directory.  (Usually `<kafka-home>/connect-plugins`)
+ - Building from source:
+     1. clone this repository
+     2. build with maven:  `mvn package`
+     3. copy the contents of `target/components/packages/newrelic-newrelic-kafka-connector-<version>` to your Kafka distribution's connect plugins directory.  (Usually `<kafka-home>/connect-plugins`)
 
--  User is competent with Kafka. Although the basic installation, configuration,
-and running of this is straight forward and be done quickly, there are more
-advanced topics in maintaining a fault tolerant, enterprise Kafka configuration.
-DevOps knowledge of Kafka and their enterprise Kafka stack easily translates
-to the concepts of Connect, as Connect is a component of Kafka.
+### Using the Connectors
 
-### Installing Kafka Connect for New Relic (Sink) Installing Kafka Connect for New Relic (Sink)
+You should configure your connector with one of the following classes depending on the type of telemetry you are sending:
+- `com.newrelic.telemetry.events.EventsSinkConnector`
+- `com.newrelic.telemetry.logs.LogsSinkConnector`
+- `com.newrelic.telemetry.metrics.MetricsSinkConnector`
 
-- Download Kafka Connect for New Relic (planning to make binary jars available
-on our public GitHub repo - Can someone confirm that is true)
-- Download any SMT’s relevant for your environment.
-    - In this case we are using test data based on a current customer’s use
-case.
-    - Custom SMTs (Single Message Transformations) can be developed by
-end user or through a NR services engagement. Based on experience
-with out home grown solution, this is a highly beneficial capability.
-    - New Relic can continue to develop and make available Transforms for
-common message formats such as Prometheus
-- Create a folder to put your downloaded files into
-    ````
-      $ mkdir /opt/kafka/plugins
-      $ cp ~/Downloads/*.jar /opt/kafka/plugins
-    ````
-- Configure your plugins directory in Kafka by updating the `connect-distributed.properties` file
-    - Update plugin.path to include your plugins directory created above
-- Stop and restart Kafka / Connect if it is already running
-- To check if your connector is available head over to the connect rest endpoint, by default it will be http://localhost:8083/connector-plugins/. Make sure our 3 connectors are listed `com.newrelic.telemetry.events.TelemetryEventsSinkConnector`,`com.newrelic.telemetry.metrics.TelemetryMetricsSinkConnector`, and `com.newrelic.telemetry.logs.TelemetryLogsSinkConnector`.
+All of the connectors expect either structured data with a schema (usually provided by the Avro, Protobuf, or JSON w/ Schema convertors), or a Java Map (usually provided by the schemaless JSON converter).
 
-### Create a Telemetry Events Connector job
+#### Timestamps
+Records sent to New Relic should contain a field named `timestamp`, else the current timestamp will be assigned when the record is flushed to the API.
+Consider using the [Replace Field](https://docs.confluent.io/platform/current/connect/transforms/replacefield.html) transformation to rename a field in the payload that is named something other than `timestamp`
 
-- Use Curl or Postman to post the following json on the Connect rest URL http://localhost:8083/connectors.
-  ```
-  {
-   "name": "events-connector",
-   "config": {
-   "connector.class": "com.newrelic.telemetry.events.TelemetryEventsSinkConnector",
-   "value.converter": "com.newrelic.telemetry.events.EventsConverter",
-   "topics": "nrevents",
-   "api.key": "<NEW_RELIC_API_KEY>"
-   }
-  }
-  ```
-  
-  
-- This will create the connector job. To check the list of running Connector jobs head over to http://localhost:8083/connectors
-- Make sure you see your connector, in this case `events-connector` listed
-- To check the status (RUNNING OR PAUSED OR FAILED) use this URL http://localhost:8083/connectors/events-connector/status
+Example:
+```
+"transforms": "RenameField",
+"transforms.RenameField.type": "org.apache.kafka.connect.transforms.ReplaceField$Value",
+"transforms.RenameField.renames": "timeOfTheEvent:timestamp"
+```
+or use the `timestamp.field` feature of the [InsertField](https://docs.confluent.io/platform/current/connect/transforms/insertfield.html) transform to use the underlying Kafka Record's timestamp as the New Relic timestamp.
 
-### Create a Telemetry Metrics Connector job
-- Metrics have the same configuration as events.
-- Use Curl or Postman to post the following json on the Connect rest URL http://localhost:8083/connectors.
-  ```
-  {
-   "name": "metrics-connector",
-   "config": {
-   "connector.class": "com.newrelic.telemetry.events.TelemetryMetricsSinkConnector",
-   "value.converter":"com.newrelic.telemetry.metrics.MetricsConverter",
-   "value.converter.schemas.enable": false,
-   "topics": "nrmetrics",
-   "api.key": "<NEW_RELIC_API_KEY>"
-   }
-  }
-    ```
+Example:
+```
+"transforms": "InsertTimestamp",
+"transforms.InsertTimestamp.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+"transforms.InsertTimestamp.timestamp.field": "timestamp"
+```
 
-### Create a Telemetry Logs Connector job
-- Logs have the same configuration as events.
-- Use Curl or Postman to post the following json on the Connect rest URL http://localhost:8083/connectors.
-  ```
-  {
-   "name": "logs-connector",
-   "config": {
-   "connector.class": "com.newrelic.telemetry.logs.TelemetryLogsSinkConnector",
-   "value.converter":"com.newrelic.telemetry.logs.LogsConverter",
-   "value.converter.schemas.enable": false,
-   "topics": "nrlogs",
-   "api.key": "<NEW_RELIC_API_KEY>"
-   }
-  }
-    ```
+#### Telemetry-specific considerations
 
-#### Timestamps in Logs
--  If `timestamp` field is found in the record, it will be used. 
--  If `timestamp` is not found and `use.record.timestamp` is set to `true` then the timestamp retrieved from the Kafka record will be used.
--  If `timestamp` is not found and `use.record.timestamp` is set to `false` then the ingestion timestamp will be used..
+##### Events
+Events sent to new relic must contain a field named `eventType`.  Consider using the InsertField or ReplaceField transforms to add it to the payload.
+Additionally, Events can only contain key/value pairs one level deep. The [Flatten](https://docs.confluent.io/platform/current/connect/transforms/flatten.html) transform can handle this for you. 
+See the New Relic Events [JSON formatting guidelines](https://docs.newrelic.com/docs/telemetry-data-platform/ingest-apis/introduction-event-api/#instrument) for specifics.
 
+#### Logs
+Logs can assume any structured format, but a field name `message` will be parsed automatically by the platform.
+See the New Relic Logs [payload format documentation](https://docs.newrelic.com/docs/logs/log-management/log-api/introduction-log-api/#payload-format) for specifics.
 
-### Full list of variables you can send to connector 
+#### Metrics.
+Metrics must contain a `name`, `type`, and `value`.  Some metric types require additional fields.
+See the New Relic Metrics [API doucmentation](https://docs.newrelic.com/docs/telemetry-data-platform/ingest-apis/report-metrics-metric-api/#new-relic-guidelines) for specifics.
+
+### Full list of connector configuration options (in addition to global options for all connectors)
   | attribute     | Required |                          description          |
   | ------------- | -------- | --------------------------------------------- |
-  | name          | yes | user definable name for identifying connector |
+  |name          | yes | user definable name for identifying connector |
   |connector.class| yes | com.newrelic.telemetry.events.TelemetryEventsSinkConnector(Events), com.newrelic.telemetry.events.TelemetryMetricsSinkConnector(Metrics), or com.newrelic.telemetry.logs.TelemetryLogsSinkConnector(Logs)|
-  |value.converter| yes | com.newrelic.telemetry.events.EventsConverter(Events), com.newrelic.telemetry.metrics.MetricsConverter(Metrics), or com.newrelic.telemetry.logs.LogsConverter(Logs) |
   |topics         | yes | Coma seperated list of topics the connector listens to.|
   |api.key        | yes | NR api key |
-  |nr.max.retries | no  | set max number of retries on the NR server, default is 5 |
-  |nr.timeout     | no  | set number of seconds to wait before throwing a timeout exception, default is 2 |  
-  |nr.retry.interval.ms | no | set interval between retries in milli seconds, default is 1000 |
-  |errors.tolerance | no | all(ignores all json errors) or none(makes connector fail on messages with incorrect format) |
-  |errors.deadletterqueue.topic.name| no | dlq topic name ( messages with incorrect format are sent to this topic) |
-  |errors.deadletterqueue.topic.replication.factor| no | dlq topic replication factor |
-  |use.record.timestamp        | no | When set to `true`, the timestamp is retrieved from the Kafka record and passed to New Relic. When set to false, the timestamp will be the ingestion timestamp. default is true |  
+  |nr.flush.max.records | no  | The maximum number of records to send in a payload. (default: 1000) |
+  |nr.flush.max.interval.ms | no  | Maximum amount of time in milliseconds to wait before flushing records to the New Relic API. (default: 5000) |
+  
 
-### Simple Message Transforms 
-- Sometimes customers want to use their own message format which is different from the standard `events` or `metrics` format.
-- In that case we develop [Simple Message Transforms](https://docs.confluent.io/current/connect/transforms/index.html#:~:text=Kafka%20Connect%20Transformations-,Kafka%20Connect%20Transformations,sent%20to%20a%20sink%20connector.)  
-- Currently we have developed two SMTs [Agent Rollup](https://github.com/newrelic/kafka-connect-newrelic/tree/master/smts/Kafka-connect-new-relic-agent-rollup-smt) and [Statsd](https://github.com/newrelic/kafka-connect-newrelic/tree/master/smts/kafka-connect-new-relic-statsd-smt) 
+### Sample Configuration
+This is a sample configuration for an Event connector in .properties format:
+```
+name=newrelic-events-sink-connector
+
+# switch to com.newrelic.telemetry.logs.LogsSinkConnector or com.newrelic.telemetry.metrics.MetricsSinkConnector
+connector.class=com.newrelic.telemetry.events.EventsSinkConnector
+
+# configure this based on your workload
+tasks.max=1
+
+topics=my-topic
+api.key=<api-key>
+
+# messages are stored in schemaless json on the topic
+# you could use Avro, Protobuf, etc here as well
+key.converter=org.apache.kafka.connect.json.JsonConverter
+value.converter=org.apache.kafka.connect.json.JsonConverter
+key.converter.schemas.enable=false
+value.converter.schemas.enable=false
+
+# declare the transformations
+transforms=inserttimestamp,eventtype,flatten
+
+#Insert the timestamp from the Kafka record
+transforms.inserttimestamp.type=org.apache.kafka.connect.transforms.InsertField$Value
+transforms.inserttimestamp.timestamp.field=timestamp
+
+# we know all events on this topic represent a purchase, so set 'eventType' to 'purchaseEvent'
+transforms.eventtype.type=org.apache.kafka.connect.transforms.InsertField$Value
+transforms.eventtype.static.field=eventType
+transforms.eventtype.static.value=purchaseEvent
+
+# flatten all nested json fields, using . as a delimeter
+transforms.flatten.type=org.apache.kafka.connect.transforms.Flatten\$Value
+transforms.flatten.delimiter=.
+```
