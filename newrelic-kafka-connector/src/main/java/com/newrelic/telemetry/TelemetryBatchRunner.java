@@ -4,7 +4,7 @@ import com.newrelic.telemetry.events.EventBatch;
 import com.newrelic.telemetry.events.EventsSinkTask;
 import com.newrelic.telemetry.logs.LogBatch;
 import com.newrelic.telemetry.metrics.MetricBatch;
-import com.newrelic.telemetry.metrics.TelemetryMetricsSinkConnector;
+import com.newrelic.telemetry.metrics.MetricsSinkConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Attr;

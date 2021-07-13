@@ -109,12 +109,12 @@ public class LogConverter {
                             attributes.put(key, new String(l.getValue().toString()));
                         }
                     } else {
-                        System.out.println("not writing attribute for: " + l.getKey().toString());
+                        System.out.println("Log Converter: not writing attribute for: " + l.getKey().toString());
                     }
                 });
 
         Log.LogBuilder builder = Log.builder()
-                .attributes(attributes);
+            .attributes(attributes);
 
         if (recordMapValue.containsKey(TIMESTAMP_ATTRIBUTE)) {
             builder.timestamp((Long) recordMapValue.get(TIMESTAMP_ATTRIBUTE));
