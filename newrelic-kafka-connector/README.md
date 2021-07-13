@@ -108,7 +108,7 @@ common message formats such as Prometheus
   |errors.deadletterqueue.topic.replication.factor| no | dlq topic replication factor |
   |use.record.timestamp        | no | When set to `true`, the timestamp is retrieved from the Kafka record and passed to New Relic. When set to false, the timestamp will be the ingestion timestamp. default is true |  
 
-### Simple Message Transforms 
+### Single Message Transforms 
 - Sometimes customers want to use their own message format which is different from the standard `events` or `metrics` format.
-- In that case we develop [Simple Message Transforms](https://docs.confluent.io/current/connect/transforms/index.html#:~:text=Kafka%20Connect%20Transformations-,Kafka%20Connect%20Transformations,sent%20to%20a%20sink%20connector.)  
+- In that case we develop [Single Message Transforms](https://docs.confluent.io/current/connect/transforms/index.html#:~:text=Kafka%20Connect%20Transformations-,Kafka%20Connect%20Transformations,sent%20to%20a%20sink%20connector.)  
 - Currently we have developed two SMTs [Agent Rollup](https://github.com/newrelic/kafka-connect-newrelic/tree/master/smts/Kafka-connect-new-relic-agent-rollup-smt) and [Statsd](https://github.com/newrelic/kafka-connect-newrelic/tree/master/smts/kafka-connect-new-relic-statsd-smt) 
