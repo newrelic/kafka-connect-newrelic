@@ -141,6 +141,7 @@ public class TelemetryEventsSinkTask extends SinkTask {
             log.error("API key is probably not right : "+re.getMessage());
             throw new ConnectException(re);
         }
+        eventBatch = null;
     }
 
 
