@@ -62,8 +62,8 @@ See the New Relic Metrics [API doucmentation](https://docs.newrelic.com/docs/tel
   | attribute     | Required |                          description          |
   | ------------- | -------- | --------------------------------------------- |
   |name          | yes | user definable name for identifying connector |
-  |connector.class| yes | com.newrelic.telemetry.events.TelemetryEventsSinkConnector(Events), com.newrelic.telemetry.events.TelemetryMetricsSinkConnector(Metrics), or com.newrelic.telemetry.logs.TelemetryLogsSinkConnector(Logs)|
-  |topics         | yes | Coma seperated list of topics the connector listens to.|
+  |connector.class| yes | com.newrelic.telemetry.events.EventsSinkConnector(Events), com.newrelic.telemetry.metrics.MetricsSinkConnector(Metrics), or com.newrelic.telemetry.logs.LogsSinkConnector(Logs)|
+  |topics         | yes | Comma seperated list of topics the connector listens to.|
   |api.key        | yes | NR api key |
   |nr.flush.max.records | no  | The maximum number of records to send in a payload. (default: 1000) |
   |nr.flush.max.interval.ms | no  | Maximum amount of time in milliseconds to wait before flushing records to the New Relic API. (default: 5000) |
