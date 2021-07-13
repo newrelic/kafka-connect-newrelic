@@ -38,7 +38,7 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
 
     @Override
     public String version() {
-        return "2.0.0-rc-1";
+        return "2.0.0";
     }
 
     final String INTEGRATION_NAME = "newrelic-kafka-connector";
