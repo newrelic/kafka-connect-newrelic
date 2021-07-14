@@ -22,6 +22,11 @@ public abstract class TelemetrySinkConnector extends SinkConnector {
 
     @Override
     public void start(Map<String, String> props) {
+
+        if (props.get(TelemetrySinkConnectorConfig.API_KEY) == null) {
+            throw new RuntimeException("Missing New Relic API key in configuration.");
+        }
+
         configProps = props;
     }
 
