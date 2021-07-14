@@ -71,13 +71,19 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
     public void put(Collection<SinkRecord> records) {
 
         for (SinkRecord record : records) {
+            try {
+                String keyStr = (record.key() == null) ? "[NULL]" : record.key().toString();
 
-            log.debug(String.format("processing record: \n%s", record.value().toString()));
-
-            T t = this.createTelemetry(record);
-
-            this.getQueue().add(t);
-
+                if (record.value() == null) {
+                    log.debug(String.format("Record with key %s had a null value.  Skipping."), keyStr);
+                } else {
+                    log.debug(String.format("processing record:\nkey:%s\nvalue:\n%s", keyStr, record.value().toString()));
+                    T t = this.createTelemetry(record);
+                    this.getQueue().add(t);
+                }
+            } catch (Exception e) {
+                log.error("Caught exception while processing a message", e);
+            }
         }
 
 
