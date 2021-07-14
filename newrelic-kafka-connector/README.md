@@ -65,6 +65,9 @@ See the New Relic Metrics [API doucmentation](https://docs.newrelic.com/docs/tel
   |connector.class| yes | com.newrelic.telemetry.events.EventsSinkConnector(Events), com.newrelic.telemetry.metrics.MetricsSinkConnector(Metrics), or com.newrelic.telemetry.logs.LogsSinkConnector(Logs)|
   |topics         | yes | Comma seperated list of topics the connector listens to.|
   |api.key        | yes | NR api key |
+  |nr.client.timeout | no | Time, in milliseconds, to wait for a response from the New Relic API (default is 2000)|
+  |nr.client.proxy.host| no | Proxy host to use to connect to the New Relic API |
+  |nr.client.proxt.port | no | Proxy host to use to connect to the New Relic API (required if using a proxy host) | 
   |nr.flush.max.records | no  | The maximum number of records to send in a payload. (default: 1000) |
   |nr.flush.max.interval.ms | no  | Maximum amount of time in milliseconds to wait before flushing records to the New Relic API. (default: 5000) |
   
