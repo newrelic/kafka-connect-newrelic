@@ -99,6 +99,8 @@ public class LogConverter {
                     String key = l.getKey();
                     if (l.getValue() instanceof String) {
                         attributes.put(key, (String) l.getValue());
+                    } else if (l.getValue() instanceof Boolean) {
+                        attributes.put(key, (Boolean) l.getValue());
                     } else if (l.getValue() instanceof Number) {
                         if (l.getValue() instanceof Float) {
                             attributes.put(key, (Float) l.getValue());
