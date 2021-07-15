@@ -29,9 +29,9 @@ public class CountMetricsConverterTest {
         assertEquals(1.0, createdCount.getValue(), 1304.0);
 
         // attributes
-        expected.put("instrumentation.metadata.kafka.topic", "myTopic");
-        expected.put("instrumentation.metadata.kafka.partition", "0");
-        expected.put("instrumentation.metadata.kafka.offset", 1001L);
+        expected.put("collector.metadata.kafka.topic", "myTopic");
+        expected.put("collector.metadata.kafka.partition", "0");
+        expected.put("collector.metadata.kafka.offset", 1001L);
         expected.put("code","500");
         expected.put("something","else");
         Map<String, Object> attributes = createdCount.getAttributes();

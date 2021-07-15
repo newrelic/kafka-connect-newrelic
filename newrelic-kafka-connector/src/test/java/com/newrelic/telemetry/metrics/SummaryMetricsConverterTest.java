@@ -32,9 +32,9 @@ public class SummaryMetricsConverterTest {
         assertEquals(10.01, createdSummary.getMax(), 0.0);
  
         // attributes
-        expected.put("instrumentation.metadata.kafka.topic", "myTopic");
-        expected.put("instrumentation.metadata.kafka.partition", "0");
-        expected.put("instrumentation.metadata.kafka.offset", 1001L);
+        expected.put("collector.metadata.kafka.topic", "myTopic");
+        expected.put("collector.metadata.kafka.partition", "0");
+        expected.put("collector.metadata.kafka.offset", 1001L);
         expected.put("tags.code", "2xx");
         Map<String, Object> attributes = createdSummary.getAttributes();
         assertEquals(expected, attributes);

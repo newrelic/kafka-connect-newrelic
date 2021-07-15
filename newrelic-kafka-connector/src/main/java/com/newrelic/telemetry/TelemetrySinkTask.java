@@ -1,6 +1,7 @@
 package com.newrelic.telemetry;
 
 import com.newrelic.telemetry.http.HttpPoster;
+import okhttp3.OkHttpClient;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -8,14 +9,11 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import okhttp3.OkHttpClient;
-
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -100,9 +98,6 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
         Attributes commonAttributes = new Attributes();
         commonAttributes.put("collector.name", INTEGRATION_NAME);
         commonAttributes.put("collector.version", this.version());
-        commonAttributes.put("instrumentation.name", INTEGRATION_NAME);
-        commonAttributes.put("instrumentation.version", this.version());
-        commonAttributes.put("instrumentation.provider", "newRelic");
         TelemetryBatchRunner<T> batchRunner = new TelemetryBatchRunner<>(telemetryClient, this::createBatch, queue, this.nrFlushMaxRecords, this.nrFlushMaxIntervalMs, TimeUnit.MILLISECONDS, commonAttributes);
 
 

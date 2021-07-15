@@ -22,9 +22,9 @@ public class LogConverterTest {
     void testEquals(Log createdLog) {
         Map<String, Object> expected = new HashMap<>();
 
-        expected.put("instrumentation.metadata.kafka.topic", "myTopic");
-        expected.put("instrumentation.metadata.kafka.partition", "0");
-        expected.put("instrumentation.metadata.kafka.offset", 1001L);
+        expected.put("collector.metadata.kafka.topic", "myTopic");
+        expected.put("collector.metadata.kafka.partition", "0");
+        expected.put("collector.metadata.kafka.offset", 1001L);
         expected.put("aStringAttribute", "a string attribute");
         expected.put("anIntAttribute", 123);
 
