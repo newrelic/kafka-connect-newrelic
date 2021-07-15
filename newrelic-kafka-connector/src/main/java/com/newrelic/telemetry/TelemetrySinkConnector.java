@@ -1,37 +1,33 @@
-package com.newrelic.telemetry.metrics;
+package com.newrelic.telemetry;
+
+import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.connect.sink.SinkConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.newrelic.telemetry.TelemetrySinkConnectorConfig;
-import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.connect.connector.Task;
-import org.apache.kafka.connect.sink.SinkConnector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class TelemetryMetricsSinkConnector extends SinkConnector {
-    private static Logger log = LoggerFactory.getLogger(TelemetryMetricsSinkConnector.class);
+public abstract class TelemetrySinkConnector extends SinkConnector {
+    private static Logger log = LoggerFactory.getLogger(TelemetrySinkConnector.class);
     private TelemetrySinkConnectorConfig config;
     private Map<String, String> configProps = new HashMap<>();
 
     @Override
     public String version() {
-        return "1.0.0";
+        return "2.0.0";
     }
 
     @Override
     public void start(Map<String, String> props) {
+
+        if (props.get(TelemetrySinkConnectorConfig.API_KEY) == null) {
+            throw new RuntimeException("Missing New Relic API key in configuration.");
+        }
+
         configProps = props;
-
-    }
-
-    @Override
-    public Class<? extends Task> taskClass() {
-        //TODO: Return your task implementation.
-        return TelemetryMetricsSinkTask.class;
     }
 
     @Override
@@ -43,7 +39,6 @@ public class TelemetryMetricsSinkConnector extends SinkConnector {
         }
 
         return configs;
-
     }
 
     @Override
