@@ -125,6 +125,7 @@ public class TelemetryEventsSinkTask extends SinkTask {
                 while (retriedCount++ < retries - 1) {
                     try {
                         if(eventBatch==null)
+                            log.debug("Size of event buffer" + eventBuffer.getEvents().size());
                             eventBatch = eventBuffer.createBatch();
                         sendToNewRelic();
                         break;
