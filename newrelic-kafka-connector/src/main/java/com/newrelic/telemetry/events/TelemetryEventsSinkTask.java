@@ -68,13 +68,15 @@ public class TelemetryEventsSinkTask extends SinkTask {
     public void put(Collection<SinkRecord> records) {
         for (SinkRecord record : records) {
             try {
-                log.debug("got back record " + record.toString());
+                if(log.isDebugEnabled()) {
+                    log.debug("got back record " + record.toString());
+                }
                 List<EventModel> dataValues = (List<EventModel>) record.value();
                 dataValues.forEach(eventModel -> {
                     Event event = new Event(eventModel.eventType, buildAttributes(eventModel.otherFields()), eventModel.timestamp);
                     eventBuffer.addEvent(event);
                 });
-            } catch (IllegalArgumentException ie) {
+            } catch (Exception ie) {
                 log.error(ie.getMessage());
                 //throw ie;
                 continue;
@@ -94,7 +96,6 @@ public class TelemetryEventsSinkTask extends SinkTask {
                     } catch (InterruptedException e) {
                         log.error("Retry Sleep thread was interrupted");
                     }
-
                 }
             }
             if(retriedCount==retries)
