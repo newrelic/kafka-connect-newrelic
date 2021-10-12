@@ -24,7 +24,7 @@ public class MetricConverter {
     private static Logger log = LoggerFactory.getLogger(MetricConverter.class);
 
     public static final String METRIC_NAME = "name";
-    public static final String METRIC_TYPE = "metricType";
+    public static final String METRIC_TYPE = "type";
     public static final String METRIC_VALUE = "value";
     public static final String METRIC_DIMENSIONS = "dimensions";
     
@@ -95,7 +95,7 @@ public class MetricConverter {
         Optional<Field> metricNameField = schema.fields().stream().filter(
             f -> f.name().equals(METRIC_NAME)).findAny();
         if (!metricNameField.isPresent()) {
-            throw new DataException(String.format("All records must contain a '%s' field", metricNameField));
+            throw new DataException(String.format("All records must contain a '%s' field", METRIC_NAME));
         } else {
             metricName = value.getString(METRIC_NAME);
         }
@@ -105,7 +105,7 @@ public class MetricConverter {
         Optional<Field> metricTypeField = schema.fields().stream().filter(
             f -> f.name().equals(METRIC_TYPE)).findAny();
         if (!metricTypeField.isPresent()) {
-            throw new DataException(String.format("All records must contain a '%s' field", metricTypeField));
+            throw new DataException(String.format("All records must contain a '%s' field", METRIC_TYPE));
         } else {
             metricType = value.getString(METRIC_TYPE);
         }
