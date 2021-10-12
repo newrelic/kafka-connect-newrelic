@@ -38,7 +38,7 @@ public class CountFixtures {
 
         SchemaBuilder builder = SchemaBuilder.struct()
                 .field("name", Schema.STRING_SCHEMA)
-                .field("metricType", Schema.STRING_SCHEMA)
+                .field("type", Schema.STRING_SCHEMA)
                 .field("value", Schema.FLOAT64_SCHEMA)
                 .field("dimensions", DIMENSIONS_MAP_SCHEMA);
         schema = builder.build();
@@ -50,7 +50,7 @@ public class CountFixtures {
 
         recordMapValue = new HashMap<>();
         recordMapValue.put("name", "promhttp_metric_handler_requests_total");
-        recordMapValue.put("metricType", "counter");
+        recordMapValue.put("type", "counter");
         recordMapValue.put("value", 1304.0);
         recordMapValue.put("dimensions", dimensionsMap);
 
