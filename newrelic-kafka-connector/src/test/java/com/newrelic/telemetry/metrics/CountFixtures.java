@@ -50,7 +50,7 @@ public class CountFixtures {
 
         recordMapValue = new HashMap<>();
         recordMapValue.put("name", "promhttp_metric_handler_requests_total");
-        recordMapValue.put("type", "counter");
+        recordMapValue.put("type", "count");
         recordMapValue.put("value", 1304.0);
         recordMapValue.put("dimensions", dimensionsMap);
 

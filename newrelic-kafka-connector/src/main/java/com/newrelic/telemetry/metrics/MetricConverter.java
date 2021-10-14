@@ -160,7 +160,7 @@ public class MetricConverter {
                 metricValue = value.getFloat64(METRIC_VALUE);
                 metric = new Gauge(metricName, metricValue, timestamp, attributes);
             break;
-            case "counter":
+            case "count":
                 metricValue = value.getFloat64(METRIC_VALUE);
                 metric = new Count(metricName, metricValue, timestamp, timestamp, attributes);
             break;
@@ -183,6 +183,8 @@ public class MetricConverter {
                 }
                 metric = new Summary(metricName, count, sum, min, max, timestamp, timestamp, attributes);
             break;
+            default:
+                throw new DataException(String.format("withSchema: unable to create metric. 'type' must be one of [gauge, count, summary]. (was: %s)", metricType));
         }
 
         if (null == metric) {
@@ -296,7 +298,7 @@ public class MetricConverter {
                 metricValue = Double.valueOf(recordMapValue.get(METRIC_VALUE).toString()).doubleValue();
                 metric = new Gauge(metricName, metricValue, timestamp, attributes);
             break;
-            case "counter":
+            case "count":
                 metricValue = Double.valueOf(recordMapValue.get(METRIC_VALUE).toString()).doubleValue();
                 metric = new Count(metricName, metricValue, timestamp, timestamp, attributes);
             break;
@@ -319,6 +321,9 @@ public class MetricConverter {
                 }
                 metric = new Summary(metricName, count, sum, min, max, timestamp, timestamp, attributes);
             break;
+            default:
+                throw new DataException(String.format("withoutSchema: unable to create metric. 'type' must be one of [gauge, count, summary]. (was: %s)", metricType));
+
         }
 
         if (null == metric) {
