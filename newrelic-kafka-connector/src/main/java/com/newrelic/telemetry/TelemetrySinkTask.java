@@ -1,6 +1,10 @@
 package com.newrelic.telemetry;
 
+import com.newrelic.telemetry.events.EventBatchSender;
 import com.newrelic.telemetry.http.HttpPoster;
+import com.newrelic.telemetry.logs.LogBatchSender;
+import com.newrelic.telemetry.metrics.MetricBatchSender;
+import com.newrelic.telemetry.spans.SpanBatchSender;
 import okhttp3.OkHttpClient;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -52,7 +56,7 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
 
     @Override
     public String version() {
-        return "2.1.0";
+        return "2.3.0";
     }
 
     final String INTEGRATION_NAME = "newrelic-kafka-connector";
@@ -60,6 +64,7 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
     @Override
     public void start(Map<String, String> properties) {
         String apiKey = properties.get(TelemetrySinkConnectorConfig.API_KEY);
+        String region = properties.get(TelemetrySinkConnectorConfig.NR_REGION);
         BlockingQueue queue = this.getQueue();
         // set this to true to log the requests and responses to the New Relic APIs
         BaseConfig bc = new BaseConfig(apiKey, false);
@@ -93,7 +98,11 @@ public abstract class TelemetrySinkTask<T extends Telemetry> extends SinkTask {
             supplier = () -> new OkHttpPoster(Duration.ofMillis(this.nrClientTimeoutMs));
         }
 
-        this.telemetryClient = TelemetryClient.create(supplier, bc);
+        MetricBatchSender metricBatchSender = MetricBatchSender.create(MetricBatchSenderFactory.fromHttpImplementation(supplier).configureWith(bc).setRegion(region).build());
+        SpanBatchSender spanBatchSender = SpanBatchSender.create(SpanBatchSenderFactory.fromHttpImplementation(supplier).configureWith(bc).setRegion(region).build());
+        EventBatchSender eventBatchSender = EventBatchSender.create(EventBatchSenderFactory.fromHttpImplementation(supplier).configureWith(bc).setRegion(region).build());
+        LogBatchSender logBatchSender = LogBatchSender.create(LogBatchSenderFactory.fromHttpImplementation(supplier).configureWith(bc).setRegion(region).build());
+        this.telemetryClient = new TelemetryClient(metricBatchSender, spanBatchSender, eventBatchSender, logBatchSender);
 
         Attributes commonAttributes = new Attributes();
         commonAttributes.put("collector.name", INTEGRATION_NAME);
