@@ -65,6 +65,7 @@ See the New Relic Metrics [API doucmentation](https://docs.newrelic.com/docs/tel
   |connector.class| yes | com.newrelic.telemetry.events.EventsSinkConnector(Events), com.newrelic.telemetry.metrics.MetricsSinkConnector(Metrics), or com.newrelic.telemetry.logs.LogsSinkConnector(Logs)|
   |topics         | yes | Comma seperated list of topics the connector listens to.|
   |api.key        | yes | NR api key |
+  |nr.region      | no  | NR data region, either US or EU (default: US) |
   |nr.client.timeout | no | Time, in milliseconds, to wait for a response from the New Relic API (default is 2000)|
   |nr.client.proxy.host| no | Proxy host to use to connect to the New Relic API |
   |nr.client.proxt.port | no | Proxy host to use to connect to the New Relic API (required if using a proxy host) | 

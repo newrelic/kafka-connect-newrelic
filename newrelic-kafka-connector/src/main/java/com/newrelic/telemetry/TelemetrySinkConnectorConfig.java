@@ -13,6 +13,9 @@ public class TelemetrySinkConnectorConfig extends AbstractConfig {
     public static final String API_KEY = "api.key";
     private static final String API_KEY_DOC = "API Key for New Relic.";
 
+    public static final String NR_REGION = "nr.region";
+    private static final String NR_REGION_DOC = "Data region for New Relic, either US or EU (default is US)";
+
     public static final String NR_CLIENT_PROXY_HOST = "nr.client.proxy.host";
     private static final String NR_CLIENT_PROXY_HOST_DOC = "Proxy host to use to connect to the New Relic API";
 
@@ -40,6 +43,7 @@ public class TelemetrySinkConnectorConfig extends AbstractConfig {
     public static ConfigDef conf() {
         ConfigDef configDef = new ConfigDef()
                 .define(API_KEY, Type.PASSWORD, Importance.HIGH, API_KEY_DOC)
+                .define(NR_REGION, Type.STRING, "US", ConfigDef.ValidString.in("US", "EU"), Importance.LOW, NR_REGION_DOC)
                 .define(NR_CLIENT_TIMEOUT_MS, Type.INT, 2000, Importance.LOW, NR_CLIENT_TIMEOUT_MS_DOC)
                 .define(NR_CLIENT_PROXY_HOST, Type.STRING, null, Importance.LOW, NR_CLIENT_PROXY_HOST_DOC)
                 .define(NR_CLIENT_PROXY_PORT, Type.INT, null, Importance.LOW, NR_CLIENT_PROXY_PORT_DOC)
