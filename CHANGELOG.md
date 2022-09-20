@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.3.1 (2022-09-20)
+### Changed
+ - Updated [Telemetry SDK](https://github.com/newrelic/newrelic-telemetry-sdk-java) version to 0.15
+ - Updated jackson-databind to 2.12.6.1
+ - Updated junit to 4.13.1
+ - Updated slf4j-api to 1.7.36
+
 ## 2.3.0 (2022-05-09)
 ### Added
 - Added new `nr.region` parameter to specify the New Relic data region. Default is `US`.
