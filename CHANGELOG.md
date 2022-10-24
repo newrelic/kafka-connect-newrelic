@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 2.3.2 (2022-10-24)
 ### Changed
- - Updated jackson-databind to 2.13.4.2 (CVE-2022-42003)
+ - Updated jackson-databind to 2.13.4.2 (CVE-2022-42003,CVE-2022-42004)
 
 ## 2.3.1 (2022-09-20)
 ### Changed
