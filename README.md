@@ -1,5 +1,7 @@
 [![Experimental Project header](https://github.com/newrelic/opensource-website/raw/master/src/images/categories/Experimental.png)](https://opensource.newrelic.com/oss-category/#experimental)
 
+# no-op to trigger Snyk test on PR
+
 # Kafka Connect New Relic Connector
 
 A reference implementation of Kafka Connect for New Relic and reference SMC.
