@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.3.3 (2024-04-10)
+### Changed
+ - Updated [Telemetry SDK](https://github.com/newrelic/newrelic-telemetry-sdk-java) to 0.16.0 (CVE-2023-3635)
+
 ## 2.3.2 (2022-10-24)
 ### Changed
  - Updated jackson-databind to 2.13.4.2 (CVE-2022-42003,CVE-2022-42004)
