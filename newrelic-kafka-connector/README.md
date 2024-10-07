@@ -6,7 +6,7 @@ Each New Relic API endpoint (ogs, metrics, events, respectively) uses a separate
 ### Installing Kafka Connect for New Relic (Sink) 
 There are two options to install:
  - Downloading a published release for GitHub
-    1. download the latest release from this repository
+    1. download the latest [release](https://github.com/newrelic/kafka-connect-newrelic/releases) from this repository
     2. Extract the archive
     3. copy the extracted contents to your Kafka distribution's connect plugins directory (Usually `<kafka-home>/connect-plugins` or `/opt/connectors`)
 
@@ -107,3 +107,7 @@ transforms.inserttimestamp.timestamp.field=timestamp
 ```
 
 See other properties files examples [here](./config)
+
+## Demonstration code
+
+If you are looking for code to generate some test telemetry, clone [this repository](https://github.com/JimHagan/nr-kafka-connect-demo).  This contains some instructions on setting up a simple standalone Kafka instance.  It uses a simple python script to generate simulated data of all three supported telemetry types.

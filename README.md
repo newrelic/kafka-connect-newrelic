@@ -16,7 +16,7 @@ Each New Relic API endpoint (ogs, metrics, events, respectively) uses a separate
 ### Installing Kafka Connect for New Relic (Sink) 
 There are two options to install:
  - Downloading a published release for GitHub
-    1. download the latest release from this repository
+    1. download the latest [release](https://github.com/newrelic/kafka-connect-newrelic/releases) from this repository
     2. Extract the archive
     3. copy the extracted contents to your Kafka distribution's connect plugins directory (Usually `<kafka-home>/connect-plugins` or `/opt/connectors`)
 
