@@ -4,30 +4,30 @@
 
 # Welcome to the New Relic Kafka Connector Repo!
 
-At present this repository contains only Sink type connectors including ones for:
+At present this repository contains only *Sink* type connectors including ones for:
 
 - Events
 - Logs
 - Metrics
 
-This Kafka Connect Sink will ship records from Kafka topics to several of New Relic's Ingestion API endpoints, for events, metrics, or logs.
-Each endpoint uses a separate connector class, requiring a separate running instance or work cluster for each.
-See below for examples of how to use them.
+These sink connectors will ship records from Kafka topics to several of New Relic's Ingestion API endpoints, for events, metrics, or logs.
+Each New Relic API endpoint (ogs, metrics, events, respectively) uses a separate connector class.
 
 ### Installing Kafka Connect for New Relic (Sink) 
 There are two options to install:
  - Downloading a published release for GitHub
     1. download the latest release from this repository
     2. Extract the archive
-    3. copy the extracted contents to your Kafka distribution's connect plugins directory.  (Usually `<kafka-home>/connect-plugins`)
+    3. copy the extracted contents to your Kafka distribution's connect plugins directory (Usually `<kafka-home>/connect-plugins` or `/opt/connectors`)
 
  - Downloading a published release from Confluent Hub
     1. Download a suitable version from [this page](https://www.confluent.io/hub/newrelic/newrelic-kafka-connector)
+    2. copy the extracted contents to your Kafka distribution's connect plugins directory (Usually `<kafka-home>/connect-plugins` or `/opt/connectors`)
 
  - Building from source:
     1. clone this repository
     2. build with maven:  `mvn package`
-    3. copy the contents of `target/components/packages/newrelic-newrelic-kafka-connector-<version>` to your Kafka distribution's connect plugins directory.  (Usually `<kafka-home>/connect-plugins`)
+    3. copy the contents of `target/components/packages/newrelic-newrelic-kafka-connector-<version>` to your Kafka distribution's connect plugins directory (Usually `<kafka-home>/connect-plugins` or `/opt/connectors`)
 
 ### Using the Connectors
 
@@ -39,7 +39,7 @@ You should configure your connector with one of the following classes depending 
 All of the connectors expect either structured data with a schema (usually provided by the Avro, Protobuf, or JSON w/ Schema convertors), or a Java Map (usually provided by the schemaless JSON converter).
 
 #### Timestamps
-Records sent to New Relic should contain a field named `timestamp`, else the current timestamp will be assigned when the record is flushed to the API.
+Records sent to New Relic should contain a field named `timestamp`, else the current timestamp will be assigned when the record is flushed to the API.  Timestamps are usually [Unix epoch timestamps](https://docs.newrelic.com/docs/logs/ui-data/timestamp-support/#unix).
 Consider using the [Replace Field](https://docs.confluent.io/platform/current/connect/transforms/replacefield.html) transformation to rename a field in the payload that is named something other than `timestamp`
 
 Example:
