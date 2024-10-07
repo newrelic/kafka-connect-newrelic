@@ -76,16 +76,16 @@ See the New Relic Metrics [API doucmentation](https://docs.newrelic.com/docs/tel
 ### Sample Configuration
 This is a sample configuration for an Event connector in .properties format:
 ```
-name=newrelic-events-sink-connector
+name=newrelic-logs-sink-connector
 
-# switch to com.newrelic.telemetry.logs.LogsSinkConnector or com.newrelic.telemetry.metrics.MetricsSinkConnector
-connector.class=com.newrelic.telemetry.events.EventsSinkConnector
+connector.class=com.newrelic.telemetry.logs.LogsSinkConnector
 
 # configure this based on your workload
 tasks.max=1
 
-topics=my-topic
-api.key=<api-key>
+topics=newrelic-logs-sink-topic
+api.key=<api.keyi>
+nr.region=US
 
 # messages are stored in schemaless json on the topic
 # you could use Avro, Protobuf, etc here as well
@@ -95,18 +95,9 @@ key.converter.schemas.enable=false
 value.converter.schemas.enable=false
 
 # declare the transformations
-transforms=inserttimestamp,eventtype,flatten
+transforms=inserttimestamp
 
-#Insert the timestamp from the Kafka record
+#Insert the timestamp from the Kafka record -- comment this transform if you wish.  New Relic will assign a timestamp on ingest.
 transforms.inserttimestamp.type=org.apache.kafka.connect.transforms.InsertField$Value
 transforms.inserttimestamp.timestamp.field=timestamp
-
-# we know all events on this topic represent a purchase, so set 'eventType' to 'purchaseEvent'
-transforms.eventtype.type=org.apache.kafka.connect.transforms.InsertField$Value
-transforms.eventtype.static.field=eventType
-transforms.eventtype.static.value=purchaseEvent
-
-# flatten all nested json fields, using . as a delimeter
-transforms.flatten.type=org.apache.kafka.connect.transforms.Flatten\$Value
-transforms.flatten.delimiter=.
 ```
