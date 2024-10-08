@@ -119,6 +119,10 @@ transforms.inserttimestamp.timestamp.field=timestamp
 See other properties files examples [here](./newrelic-kafka-connector/config)
 
 
+## Demonstration code
+
+If you are looking for code to generate some test telemetry, clone [this repository](https://github.com/JimHagan/nr-kafka-connect-demo).  This contains some instructions on setting up a simple standalone Kafka instance.  It uses a simple python script to generate simulated data of all three supported telemetry types.
+
 ## Contributing
 Full details about how to contribute to
 Contributions to improve Kafka Connect for New Relic are encouraged! Keep in mind when you submit your pull request, you'll need to sign the CLA via the click-through using CLA-Assistant. You only have to sign the CLA one time per project.
