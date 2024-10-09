@@ -1,19 +1,23 @@
 # Welcome to the New Relic Kafka Connect Sink Connector!
 
-This Kafka Connect Sink will ship records from Kafka topics to several of New Relic's Ingestion API endpoints, for events, metrics, or logs.
-Each endpoint uses a separate connector class, requiring a separate running instance or work cluster for each.
-See below for examples of how to use them.
+These sink connectors will ship records from Kafka topics to several of New Relic's Ingestion API endpoints, for events, metrics, or logs.
+Each New Relic API endpoint (ogs, metrics, events, respectively) uses a separate connector class.
 
 ### Installing Kafka Connect for New Relic (Sink) 
 There are two options to install:
-- Downloading a published release
-    1. download the latest release from this repository
+ - Downloading a published release for GitHub
+    1. download the latest [release](https://github.com/newrelic/kafka-connect-newrelic/releases) from this repository
     2. Extract the archive
-    3. copy the extracted contents to your Kafka distribution's connect plugins directory.  (Usually `<kafka-home>/connect-plugins`)
+    3. copy the extracted contents to your Kafka distribution's connect plugins directory (Usually `<kafka-home>/connect-plugins` or `/opt/connectors`)
+
+ - Downloading a published release from Confluent Hub
+    1. Download a suitable version from [this page](https://www.confluent.io/hub/newrelic/newrelic-kafka-connector)
+    2. copy the extracted contents to your Kafka distribution's connect plugins directory (Usually `<kafka-home>/connect-plugins` or `/opt/connectors`)
+
  - Building from source:
-     1. clone this repository
-     2. build with maven:  `mvn package`
-     3. copy the contents of `target/components/packages/newrelic-newrelic-kafka-connector-<version>` to your Kafka distribution's connect plugins directory.  (Usually `<kafka-home>/connect-plugins`)
+    1. clone this repository
+    2. build with maven:  `mvn package`
+    3. copy the contents of `target/components/packages/newrelic-newrelic-kafka-connector-<version>` to your Kafka distribution's connect plugins directory (Usually `<kafka-home>/connect-plugins` or `/opt/connectors`)
 
 ### Using the Connectors
 
@@ -25,7 +29,7 @@ You should configure your connector with one of the following classes depending 
 All of the connectors expect either structured data with a schema (usually provided by the Avro, Protobuf, or JSON w/ Schema convertors), or a Java Map (usually provided by the schemaless JSON converter).
 
 #### Timestamps
-Records sent to New Relic should contain a field named `timestamp`, else the current timestamp will be assigned when the record is flushed to the API.
+Records sent to New Relic should contain a field named `timestamp`, else the current timestamp will be assigned when the record is flushed to the API.  Timestamps are usually [Unix epoch timestamps](https://docs.newrelic.com/docs/logs/ui-data/timestamp-support/#unix).
 Consider using the [Replace Field](https://docs.confluent.io/platform/current/connect/transforms/replacefield.html) transformation to rename a field in the payload that is named something other than `timestamp`
 
 Example:
@@ -65,7 +69,7 @@ See the New Relic Metrics [API doucmentation](https://docs.newrelic.com/docs/tel
   |connector.class| yes | com.newrelic.telemetry.events.EventsSinkConnector(Events), com.newrelic.telemetry.metrics.MetricsSinkConnector(Metrics), or com.newrelic.telemetry.logs.LogsSinkConnector(Logs)|
   |topics         | yes | Comma seperated list of topics the connector listens to.|
   |api.key        | yes | NR api key |
-  |nr.region      | no  | NR data region, either US or EU (default: US) |
+  |nr.region      | yes  | NR data region, either US or EU (default: US) |
   |nr.client.timeout | no | Time, in milliseconds, to wait for a response from the New Relic API (default is 2000)|
   |nr.client.proxy.host| no | Proxy host to use to connect to the New Relic API |
   |nr.client.proxt.port | no | Proxy host to use to connect to the New Relic API (required if using a proxy host) | 
@@ -74,18 +78,18 @@ See the New Relic Metrics [API doucmentation](https://docs.newrelic.com/docs/tel
   
 
 ### Sample Configuration
-This is a sample configuration for an Event connector in .properties format:
+This is basic sample configuration for an Event connector in .properties format:
 ```
-name=newrelic-events-sink-connector
+name=newrelic-logs-sink-connector
 
-# switch to com.newrelic.telemetry.logs.LogsSinkConnector or com.newrelic.telemetry.metrics.MetricsSinkConnector
-connector.class=com.newrelic.telemetry.events.EventsSinkConnector
+connector.class=com.newrelic.telemetry.logs.LogsSinkConnector
 
 # configure this based on your workload
 tasks.max=1
 
-topics=my-topic
-api.key=<api-key>
+topics=newrelic-logs-sink-topic
+api.key=<api.keyi>
+nr.region=US
 
 # messages are stored in schemaless json on the topic
 # you could use Avro, Protobuf, etc here as well
@@ -95,18 +99,15 @@ key.converter.schemas.enable=false
 value.converter.schemas.enable=false
 
 # declare the transformations
-transforms=inserttimestamp,eventtype,flatten
+transforms=inserttimestamp
 
-#Insert the timestamp from the Kafka record
+#Insert the timestamp from the Kafka record -- comment this transform if you wish.  New Relic will assign a timestamp on ingest.
 transforms.inserttimestamp.type=org.apache.kafka.connect.transforms.InsertField$Value
 transforms.inserttimestamp.timestamp.field=timestamp
-
-# we know all events on this topic represent a purchase, so set 'eventType' to 'purchaseEvent'
-transforms.eventtype.type=org.apache.kafka.connect.transforms.InsertField$Value
-transforms.eventtype.static.field=eventType
-transforms.eventtype.static.value=purchaseEvent
-
-# flatten all nested json fields, using . as a delimeter
-transforms.flatten.type=org.apache.kafka.connect.transforms.Flatten\$Value
-transforms.flatten.delimiter=.
 ```
+
+See other properties files examples [here](./config)
+
+## Demonstration code
+
+If you are looking for code to generate some test telemetry, clone [this repository](https://github.com/JimHagan/nr-kafka-connect-demo).  This contains some instructions on setting up a simple standalone Kafka instance.  It uses a simple python script to generate simulated data of all three supported telemetry types.
